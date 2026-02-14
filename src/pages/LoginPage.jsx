@@ -96,11 +96,11 @@ export default function LoginPage() {
             <div className="w-full max-w-md">
                 {/* Logo area */}
                 <div className="text-center mb-8 animate-fade-in-up">
-                    <img src="/vnpay-logo.svg" alt="VNPAY Lucky Draw" className="w-28 h-28 mx-auto mb-2" />
+                    <img src="/vnpay-logo.svg" alt="System Lucky Draw" className="w-28 h-28 mx-auto mb-2" />
                     <h1 className="text-3xl font-bold font-[var(--font-display)] bg-gradient-to-r from-tet-gold via-yellow-300 to-tet-gold bg-clip-text text-transparent">
-                        VNPAY Lucky Draw
+                        System Lucky Draw
                     </h1>
-                    <p className="text-tet-pink mt-2 text-sm">Tết Bính Ngọ 2026 • VNPAY</p>
+                    <p className="text-tet-pink mt-2 text-sm">Tết Bính Ngọ 2026</p>
                 </div>
 
                 {/* Login card */}
@@ -198,7 +198,7 @@ export default function LoginPage() {
                 </div>
 
                 <p className="text-center text-xs text-tet-pink/40 mt-6">
-                    © 2026 VNPAY • Chúc Mừng Năm Mới 🎆
+                    © 2026 System Lucky Draw • Chúc Mừng Năm Mới 🎆
                 </p>
             </div>
         </div>

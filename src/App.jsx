@@ -11,7 +11,7 @@ function AppContent() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center animate-fade-in-up">
-          <img src="/vnpay-logo.svg" alt="VNPAY" className="w-20 h-20 mx-auto mb-4 animate-float" />
+          <img src="/vnpay-logo.svg" alt="System" className="w-20 h-20 mx-auto mb-4 animate-float" />
           <h1 className="text-2xl font-bold text-tet-gold font-[var(--font-display)]">
             Lì Xì Lucky Draw
           </h1>

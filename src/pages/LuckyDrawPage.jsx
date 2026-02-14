@@ -166,7 +166,7 @@ export default function LuckyDrawPage() {
             {/* Lucky Envelope */}
             <div className="lucky-envelope p-6 mb-6 animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
                 <div className="text-center relative z-10">
-                    <img src="/vnpay-logo.svg" alt="VNPAY" className="w-16 h-16 mx-auto mb-3" />
+                    <img src="/vnpay-logo.svg" alt="System" className="w-16 h-16 mx-auto mb-3" />
                     <h3 className="text-xl font-bold text-tet-gold-light mb-1 font-[var(--font-display)]">
                         Lì Xì May Mắn
                     </h3>
@@ -192,7 +192,7 @@ export default function LuckyDrawPage() {
                         </div>
                     ) : !todayResult && (
                         <div className="mb-5 mx-auto max-w-xs py-6">
-                            <img src="/vnpay-logo.svg" alt="VNPAY Lì Xì" className="w-24 h-24 mx-auto animate-float mb-3" />
+                            <img src="/vnpay-logo.svg" alt="Lì Xì" className="w-24 h-24 mx-auto animate-float mb-3" />
                             <p className="text-tet-gold/70 text-sm font-medium">Bấm nút bên dưới để mở lì xì!</p>
                             <div className="flex justify-center gap-3 mt-3">
                                 <span className="text-sm opacity-60 animate-float text-tet-gold" style={{ animationDelay: '0s' }}>✨</span>
