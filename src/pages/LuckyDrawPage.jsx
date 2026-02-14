@@ -60,19 +60,16 @@ export default function LuckyDrawPage() {
         if (!user) return
         const today = getTodayBangkok()
         try {
-            const { data, error: fetchError } = await supabase
-                .from('lucky_draw_results')
-                .select('*')
-                .eq('user_id', user.id)
-                .eq('draw_date', today)
-                .maybeSingle()
+            const { data, error: fetchError } = await supabase.rpc('get_my_today_result')
+
+            const todayData = Array.isArray(data) ? data[0] : data
 
             if (fetchError) {
                 console.error('Error checking today result:', fetchError)
                 return
             }
-            if (data) {
-                setTodayResult(data)
+            if (todayData) {
+                setTodayResult(todayData)
             }
         } finally {
             setLoading(false)

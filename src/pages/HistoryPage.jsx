@@ -21,12 +21,7 @@ export default function HistoryPage() {
             thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
             const fromDate = thirtyDaysAgo.toISOString().split('T')[0]
 
-            const { data, error } = await supabase
-                .from('lucky_draw_results')
-                .select('*')
-                .eq('user_id', user.id)
-                .gte('draw_date', fromDate)
-                .order('draw_date', { ascending: false })
+            const { data, error } = await supabase.rpc('get_my_history', { days_back: 30 })
 
             if (error) {
                 console.error('Error fetching history:', error)
