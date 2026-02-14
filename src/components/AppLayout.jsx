@@ -1,8 +1,10 @@
-import { useState } from 'react'
+import { useState, lazy, Suspense, memo } from 'react'
 import { useAuth } from '../context/AuthContext'
-import LuckyDrawPage from '../pages/LuckyDrawPage'
-import HistoryPage from '../pages/HistoryPage'
-import AdminPage from '../pages/AdminPage'
+
+// Lazy load tab pages — only loaded when user navigates to them
+const LuckyDrawPage = lazy(() => import('../pages/LuckyDrawPage'))
+const HistoryPage = lazy(() => import('../pages/HistoryPage'))
+const AdminPage = lazy(() => import('../pages/AdminPage'))
 
 const TABS = [
     { id: 'draw', label: '🎰 Quay thưởng', icon: '🎰' },
@@ -11,6 +13,12 @@ const TABS = [
 
 const ADMIN_TAB = { id: 'admin', label: '👥 Quản lý', icon: '👥' }
 
+const TabLoading = memo(() => (
+    <div className="flex items-center justify-center py-20">
+        <div className="text-tet-gold animate-pulse text-lg">Đang tải...</div>
+    </div>
+))
+
 export default function AppLayout() {
     const { user, employee, isAdmin, signOut } = useAuth()
     const [activeTab, setActiveTab] = useState('draw')
@@ -18,12 +26,13 @@ export default function AppLayout() {
     const tabs = isAdmin ? [...TABS, ADMIN_TAB] : TABS
 
     function renderPage() {
-        switch (activeTab) {
-            case 'draw': return <LuckyDrawPage />
-            case 'history': return <HistoryPage />
-            case 'admin': return isAdmin ? <AdminPage /> : <LuckyDrawPage />
-            default: return <LuckyDrawPage />
-        }
+        return (
+            <Suspense fallback={<TabLoading />}>
+                {activeTab === 'draw' && <LuckyDrawPage />}
+                {activeTab === 'history' && <HistoryPage />}
+                {activeTab === 'admin' && isAdmin && <AdminPage />}
+            </Suspense>
+        )
     }
 
     return (

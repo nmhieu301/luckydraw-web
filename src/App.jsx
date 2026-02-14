@@ -1,31 +1,38 @@
+import { lazy, Suspense } from 'react'
 import { AuthProvider, useAuth } from './context/AuthContext'
-import LoginPage from './pages/LoginPage'
-import AppLayout from './components/AppLayout'
 import FireworkEffect from './components/FireworkEffect'
 import './index.css'
+
+// Lazy load pages for better initial load time
+const LoginPage = lazy(() => import('./pages/LoginPage'))
+const AppLayout = lazy(() => import('./components/AppLayout'))
+
+function LoadingScreen() {
+  return (
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="text-center animate-fade-in-up">
+        <img src="/vnpay-logo.svg" alt="System" className="w-20 h-20 mx-auto mb-4 animate-float" />
+        <h1 className="text-2xl font-bold text-tet-gold font-[var(--font-display)]">
+          System Lucky Draw
+        </h1>
+        <p className="text-tet-pink/50 mt-2 animate-pulse">Đang tải...</p>
+      </div>
+    </div>
+  )
+}
 
 function AppContent() {
   const { session, loading } = useAuth()
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center animate-fade-in-up">
-          <img src="/vnpay-logo.svg" alt="System" className="w-20 h-20 mx-auto mb-4 animate-float" />
-          <h1 className="text-2xl font-bold text-tet-gold font-[var(--font-display)]">
-            Lì Xì Lucky Draw
-          </h1>
-          <p className="text-tet-pink/50 mt-2 animate-pulse">Đang tải...</p>
-        </div>
-      </div>
-    )
+    return <LoadingScreen />
   }
 
-  if (!session) {
-    return <LoginPage />
-  }
-
-  return <AppLayout />
+  return (
+    <Suspense fallback={<LoadingScreen />}>
+      {!session ? <LoginPage /> : <AppLayout />}
+    </Suspense>
+  )
 }
 
 export default function App() {
