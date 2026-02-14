@@ -15,14 +15,13 @@ export function AuthProvider({ children }) {
     const fetchingRef = useRef(false)
 
     useEffect(() => {
-        // Safety timeout - never stay loading > 8s
+        // Safety timeout - never stay loading > 6s
         const safetyTimer = setTimeout(() => {
             setLoading(false)
-        }, 8000)
+        }, 6000)
 
         async function initAuth() {
             try {
-                // First check for existing session
                 const { data: { session: currentSession } } = await supabase.auth.getSession()
 
                 if (currentSession?.user) {
@@ -40,7 +39,6 @@ export function AuthProvider({ children }) {
 
         initAuth()
 
-        // Listen for auth changes (magic link, sign out, etc.)
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
             async (event, newSession) => {
                 console.log('Auth event:', event)
@@ -67,7 +65,6 @@ export function AuthProvider({ children }) {
     }, [])
 
     async function fetchEmployee(authUser) {
-        // Prevent concurrent fetches
         if (fetchingRef.current) return
         fetchingRef.current = true
 
@@ -76,32 +73,29 @@ export function AuthProvider({ children }) {
                 .from('employees')
                 .select('*')
                 .eq('email', authUser.email)
-                .single()
+                .maybeSingle()
 
-            if (error && error.code === 'PGRST116') {
-                // No employee record found — new user, still allow access
-                setEmployee(null)
-            } else if (error) {
+            if (error) {
                 console.error('Error fetching employee:', error)
                 setEmployee(null)
+            } else if (!data) {
+                // No employee record - new user
+                setEmployee(null)
             } else {
-                // Update last_login_at and auth_user_id first
-                await supabase
+                // Set employee immediately with the data we have
+                setEmployee(data)
+
+                // Update auth_user_id + last_login in background (don't await)
+                supabase
                     .from('employees')
                     .update({
                         last_login_at: new Date().toISOString(),
                         auth_user_id: authUser.id
                     })
                     .eq('id', data.id)
-
-                // Re-fetch to get the most up-to-date employee data
-                const { data: refreshed } = await supabase
-                    .from('employees')
-                    .select('*')
-                    .eq('id', data.id)
-                    .single()
-
-                setEmployee(refreshed || data)
+                    .then(() => {
+                        console.log('Employee linked & login updated')
+                    })
             }
         } catch (err) {
             console.error('Error in fetchEmployee:', err)
