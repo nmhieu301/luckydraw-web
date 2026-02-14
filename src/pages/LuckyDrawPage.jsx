@@ -169,7 +169,7 @@ export default function LuckyDrawPage() {
             {/* Lucky Envelope */}
             <div className="lucky-envelope p-6 mb-6 animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
                 <div className="text-center relative z-10">
-                    <div className="text-5xl mb-3">🧧</div>
+                    <img src="/vnpay-logo.svg" alt="VNPAY" className="w-16 h-16 mx-auto mb-3" />
                     <h3 className="text-xl font-bold text-tet-gold-light mb-1 font-[var(--font-display)]">
                         Lì Xì May Mắn
                     </h3>

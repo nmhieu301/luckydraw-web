@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" fill="none">
+  <!-- Background envelope -->
+  <rect x="30" y="50" width="140" height="120" rx="12" fill="#DC2626" stroke="#F59E0B" stroke-width="3"/>
+  <!-- Envelope flap -->
+  <path d="M30 62 L100 110 L170 62" fill="#B91C1C" stroke="#F59E0B" stroke-width="2"/>
+  <!-- Golden seal circle -->
+  <circle cx="100" cy="95" r="32" fill="#F59E0B" stroke="#FDE68A" stroke-width="2"/>
+  <!-- VNPAY text -->
+  <text x="100" y="92" text-anchor="middle" font-family="Arial, sans-serif" font-weight="bold" font-size="16" fill="#7C2D12">VNPAY</text>
+  <!-- Sub text -->
+  <text x="100" y="106" text-anchor="middle" font-family="Arial, sans-serif" font-size="8" fill="#92400E">LÌ XÌ 2026</text>
+  <!-- Cherry blossoms -->
+  <circle cx="45" cy="35" r="6" fill="#FBBF24" opacity="0.8"/>
+  <circle cx="55" cy="28" r="5" fill="#FDE68A" opacity="0.7"/>
+  <circle cx="38" cy="25" r="4" fill="#F59E0B" opacity="0.6"/>
+  <circle cx="155" cy="35" r="6" fill="#FBBF24" opacity="0.8"/>
+  <circle cx="145" cy="28" r="5" fill="#FDE68A" opacity="0.7"/>
+  <circle cx="162" cy="25" r="4" fill="#F59E0B" opacity="0.6"/>
+  <!-- Golden coins -->
+  <ellipse cx="50" cy="175" rx="12" ry="8" fill="#F59E0B" stroke="#D97706" stroke-width="1.5"/>
+  <text x="50" y="178" text-anchor="middle" font-size="8" fill="#92400E" font-weight="bold">$</text>
+  <ellipse cx="150" cy="175" rx="12" ry="8" fill="#F59E0B" stroke="#D97706" stroke-width="1.5"/>
+  <text x="150" y="178" text-anchor="middle" font-size="8" fill="#92400E" font-weight="bold">$</text>
+  <!-- Horse silhouette (simple) -->
+  <path d="M90 140 Q95 130 100 135 Q105 130 110 140 L108 150 Q100 148 92 150 Z" fill="#FDE68A" opacity="0.5"/>
+</svg>

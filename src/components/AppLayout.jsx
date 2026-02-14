@@ -32,7 +32,7 @@ export default function AppLayout() {
             <header className="sticky top-0 z-40 border-b border-tet-gold/10 bg-surface/80 backdrop-blur-xl">
                 <div className="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                        <span className="text-2xl">🧧</span>
+                        <img src="/vnpay-logo.svg" alt="VNPAY" className="w-9 h-9" />
                         <div>
                             <h1 className="text-sm font-bold text-tet-gold font-[var(--font-display)]">Lucky Draw</h1>
                             <p className="text-xs text-tet-pink/40">Tết 2026</p>
@@ -75,8 +75,8 @@ export default function AppLayout() {
                             key={tab.id}
                             onClick={() => setActiveTab(tab.id)}
                             className={`flex-1 py-3 md:py-2.5 flex flex-col md:flex-row items-center justify-center gap-1 text-xs font-medium transition-all ${activeTab === tab.id
-                                    ? 'text-tet-gold border-t-2 border-tet-gold md:border-t-0 md:border-b-2 bg-tet-gold/5'
-                                    : 'text-tet-pink/40 hover:text-tet-pink/70 border-t-2 border-transparent md:border-t-0 md:border-b-2'
+                                ? 'text-tet-gold border-t-2 border-tet-gold md:border-t-0 md:border-b-2 bg-tet-gold/5'
+                                : 'text-tet-pink/40 hover:text-tet-pink/70 border-t-2 border-transparent md:border-t-0 md:border-b-2'
                                 }`}
                         >
                             <span className="text-lg md:text-base">{tab.icon}</span>

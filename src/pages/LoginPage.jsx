@@ -96,9 +96,9 @@ export default function LoginPage() {
             <div className="w-full max-w-md">
                 {/* Logo area */}
                 <div className="text-center mb-8 animate-fade-in-up">
-                    <div className="text-7xl mb-4">🧧</div>
+                    <img src="/vnpay-logo.svg" alt="VNPAY Lucky Draw" className="w-28 h-28 mx-auto mb-2" />
                     <h1 className="text-3xl font-bold font-[var(--font-display)] bg-gradient-to-r from-tet-gold via-yellow-300 to-tet-gold bg-clip-text text-transparent">
-                        Lì Xì Lucky Draw
+                        VNPAY Lucky Draw
                     </h1>
                     <p className="text-tet-pink mt-2 text-sm">Tết Bính Ngọ 2026 • VNPAY</p>
                 </div>
