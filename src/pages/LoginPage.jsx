@@ -4,8 +4,7 @@ import { isValidVnpayEmail, getVietnameseError } from '../lib/utils'
 
 export default function LoginPage() {
     const [email, setEmail] = useState('')
-    const [otp, setOtp] = useState('')
-    const [step, setStep] = useState('email') // 'email' | 'otp'
+    const [step, setStep] = useState('email') // 'email' | 'sent'
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState('')
     const [success, setSuccess] = useState('')
@@ -25,7 +24,7 @@ export default function LoginPage() {
         }, 1000)
     }
 
-    async function handleSendOTP(e) {
+    async function handleSendLink(e) {
         e.preventDefault()
         setError('')
         setSuccess('')
@@ -43,6 +42,7 @@ export default function LoginPage() {
                 email: trimmedEmail,
                 options: {
                     shouldCreateUser: true,
+                    emailRedirectTo: import.meta.env.VITE_APP_BASE_URL || window.location.origin,
                 },
             })
 
@@ -51,8 +51,8 @@ export default function LoginPage() {
                 return
             }
 
-            setStep('otp')
-            setSuccess('Mã OTP đã được gửi đến email của bạn')
+            setStep('sent')
+            setSuccess('Đường dẫn đăng nhập đã được gửi đến email của bạn')
             startCooldown(60)
         } catch (err) {
             setError('Lỗi kết nối. Vui lòng thử lại.')
@@ -61,49 +61,22 @@ export default function LoginPage() {
         }
     }
 
-    async function handleVerifyOTP(e) {
-        e.preventDefault()
-        setError('')
-        setSuccess('')
-
-        if (!otp || otp.length < 6) {
-            setError('Vui lòng nhập đủ 6 số OTP')
-            return
-        }
-
-        setLoading(true)
-        try {
-            const { error: verifyError } = await supabase.auth.verifyOtp({
-                email: email.trim().toLowerCase(),
-                token: otp,
-                type: 'email',
-            })
-
-            if (verifyError) {
-                setError(getVietnameseError(verifyError.message))
-                return
-            }
-            // Auth state change will handle redirect
-        } catch (err) {
-            setError('Lỗi xác thực. Vui lòng thử lại.')
-        } finally {
-            setLoading(false)
-        }
-    }
-
-    async function handleResendOTP() {
+    async function handleResend() {
         if (cooldown > 0) return
         setError('')
         setLoading(true)
         try {
             const { error: authError } = await supabase.auth.signInWithOtp({
                 email: email.trim().toLowerCase(),
+                options: {
+                    emailRedirectTo: import.meta.env.VITE_APP_BASE_URL || window.location.origin,
+                },
             })
             if (authError) {
                 setError(getVietnameseError(authError.message))
                 return
             }
-            setSuccess('Đã gửi lại mã OTP')
+            setSuccess('Đã gửi lại đường dẫn đăng nhập')
             startCooldown(60)
         } catch {
             setError('Lỗi kết nối. Vui lòng thử lại.')
@@ -133,7 +106,7 @@ export default function LoginPage() {
                 {/* Login card */}
                 <div className="glass-card p-8 animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
                     <h2 className="text-xl font-semibold text-center mb-6 text-tet-gold-light">
-                        {step === 'email' ? 'Đăng nhập' : 'Nhập mã OTP'}
+                        {step === 'email' ? 'Đăng nhập' : 'Kiểm tra email'}
                     </h2>
 
                     {/* Error message */}
@@ -153,7 +126,7 @@ export default function LoginPage() {
                     )}
 
                     {step === 'email' ? (
-                        <form onSubmit={handleSendOTP} className="space-y-4">
+                        <form onSubmit={handleSendLink} className="space-y-4">
                             <div>
                                 <label className="block text-sm font-medium text-tet-gold-light/80 mb-2">
                                     Email công ty
@@ -170,7 +143,7 @@ export default function LoginPage() {
                                 />
                             </div>
                             <button
-                                id="send-otp-btn"
+                                id="send-link-btn"
                                 type="submit"
                                 disabled={loading}
                                 className="w-full py-3 px-4 rounded-xl font-semibold text-surface bg-gradient-to-r from-tet-gold to-yellow-400 hover:from-yellow-400 hover:to-tet-gold disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-tet-gold/20"
@@ -183,66 +156,44 @@ export default function LoginPage() {
                                         </svg>
                                         Đang gửi...
                                     </span>
-                                ) : 'Gửi mã OTP'}
+                                ) : '📧 Gửi đường dẫn đăng nhập'}
                             </button>
                         </form>
                     ) : (
-                        <form onSubmit={handleVerifyOTP} className="space-y-4">
-                            <div>
-                                <label className="block text-sm font-medium text-tet-gold-light/80 mb-2">
-                                    Mã OTP (6 số)
-                                </label>
-                                <input
-                                    id="otp-input"
-                                    type="text"
-                                    value={otp}
-                                    onChange={e => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                                    placeholder="000000"
-                                    className="w-full px-4 py-3 rounded-xl bg-surface border border-tet-gold/20 text-tet-red-light placeholder-tet-red-light/30 focus:outline-none focus:border-tet-gold/60 focus:ring-2 focus:ring-tet-gold/20 transition-all text-center text-2xl tracking-[0.5em] font-mono"
-                                    maxLength={6}
-                                    autoFocus
-                                />
-                                <p className="mt-2 text-xs text-tet-pink/60">
-                                    Kiểm tra hộp thư <strong>{email}</strong>
+                        <div className="space-y-4">
+                            {/* Mail sent illustration */}
+                            <div className="text-center py-4">
+                                <div className="text-6xl mb-4">📬</div>
+                                <p className="text-tet-gold-light font-medium mb-2">
+                                    Đường dẫn đã được gửi!
+                                </p>
+                                <p className="text-sm text-tet-pink/60">
+                                    Kiểm tra hộp thư <strong className="text-tet-gold">{email}</strong> và nhấn vào đường dẫn để đăng nhập.
+                                </p>
+                                <p className="text-xs text-tet-pink/40 mt-3">
+                                    💡 Nếu không thấy email, hãy kiểm tra thư mục Spam/Junk
                                 </p>
                             </div>
 
-                            <button
-                                id="verify-otp-btn"
-                                type="submit"
-                                disabled={loading}
-                                className="w-full py-3 px-4 rounded-xl font-semibold text-surface bg-gradient-to-r from-tet-gold to-yellow-400 hover:from-yellow-400 hover:to-tet-gold disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-tet-gold/20"
-                            >
-                                {loading ? (
-                                    <span className="flex items-center justify-center gap-2">
-                                        <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                                        </svg>
-                                        Đang xác thực...
-                                    </span>
-                                ) : 'Xác nhận'}
-                            </button>
-
-                            <div className="flex items-center justify-between pt-2">
+                            <div className="flex items-center justify-between pt-2 border-t border-tet-gold/10">
                                 <button
                                     type="button"
-                                    onClick={() => { setStep('email'); setOtp(''); setError(''); setSuccess('') }}
+                                    onClick={() => { setStep('email'); setError(''); setSuccess('') }}
                                     className="text-sm text-tet-gold/70 hover:text-tet-gold transition-colors"
                                 >
                                     ← Đổi email
                                 </button>
                                 <button
-                                    id="resend-otp-btn"
+                                    id="resend-link-btn"
                                     type="button"
-                                    onClick={handleResendOTP}
+                                    onClick={handleResend}
                                     disabled={cooldown > 0 || loading}
                                     className="text-sm text-tet-gold/70 hover:text-tet-gold disabled:text-tet-red-light/30 disabled:cursor-not-allowed transition-colors"
                                 >
-                                    {cooldown > 0 ? `Gửi lại (${cooldown}s)` : 'Gửi lại OTP'}
+                                    {cooldown > 0 ? `Gửi lại (${cooldown}s)` : '🔄 Gửi lại đường dẫn'}
                                 </button>
                             </div>
-                        </form>
+                        </div>
                     )}
                 </div>
 
