@@ -213,7 +213,7 @@ export default function LuckyDrawPage() {
                     {todayResult && !spinning && (
                         <div className={`mb-4 ${showResult ? 'animate-bounce-in' : 'animate-fade-in-up'}`}>
                             <p className="text-tet-pink/80 text-sm mb-2">
-                                {showResult ? getResultMessage(todayResult.amount) : 'Kết quả hôm nay của bạn:'}
+                                {showResult ? getResultMessage(todayResult.amount) : 'Kết quả lì xì của bạn:'}
                             </p>
                             <div className="text-4xl font-bold text-tet-gold font-[var(--font-display)] animate-pulse-glow inline-block px-6 py-3 rounded-2xl bg-surface/50">
                                 {formatCurrency(todayResult.amount)}
@@ -241,7 +241,7 @@ export default function LuckyDrawPage() {
                         </button>
                     ) : (
                         <div className="text-sm text-tet-pink/50 mt-2">
-                            ⏰ Bạn đã quay hôm nay. Hẹn gặp lại ngày mai!
+                            🎁 Bạn đã nhận lì xì rồi. Liên hệ Admin để được reset!
                         </div>
                     )}
                 </div>
