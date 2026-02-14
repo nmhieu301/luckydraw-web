@@ -13,43 +13,22 @@ export function AuthProvider({ children }) {
     const [employee, setEmployee] = useState(null)
     const [loading, setLoading] = useState(true)
     const fetchingRef = useRef(false)
+    const initRef = useRef(false)
 
     useEffect(() => {
-        // Safety timeout - never stay loading > 6s
-        const safetyTimer = setTimeout(() => {
-            setLoading(false)
-        }, 6000)
+        // Safety timeout
+        const safetyTimer = setTimeout(() => setLoading(false), 6000)
 
-        async function initAuth() {
-            try {
-                const { data: { session: currentSession } } = await supabase.auth.getSession()
-
-                if (currentSession?.user) {
-                    setSession(currentSession)
-                    setUser(currentSession.user)
-                    await fetchEmployee(currentSession.user)
-                } else {
-                    setLoading(false)
-                }
-            } catch (err) {
-                console.error('Init auth error:', err)
-                setLoading(false)
-            }
-        }
-
-        initAuth()
-
+        // Listen for ALL auth changes including INITIAL_SESSION
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
             async (event, newSession) => {
-                console.log('Auth event:', event)
+                console.log('Auth event:', event, newSession?.user?.email)
 
-                if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-                    if (newSession?.user) {
-                        setSession(newSession)
-                        setUser(newSession.user)
-                        await fetchEmployee(newSession.user)
-                    }
-                } else if (event === 'SIGNED_OUT') {
+                if (newSession?.user) {
+                    setSession(newSession)
+                    setUser(newSession.user)
+                    await fetchEmployee(newSession.user)
+                } else {
                     setSession(null)
                     setUser(null)
                     setEmployee(null)
@@ -69,23 +48,26 @@ export function AuthProvider({ children }) {
         fetchingRef.current = true
 
         try {
+            console.log('Fetching employee for:', authUser.email)
+
             const { data, error } = await supabase
                 .from('employees')
                 .select('*')
                 .eq('email', authUser.email)
                 .maybeSingle()
 
+            console.log('Employee result:', data, error)
+
             if (error) {
                 console.error('Error fetching employee:', error)
                 setEmployee(null)
             } else if (!data) {
-                // No employee record - new user
                 setEmployee(null)
             } else {
-                // Set employee immediately with the data we have
                 setEmployee(data)
+                console.log('Employee role:', data.role, 'isAdmin:', data.role === 'admin')
 
-                // Update auth_user_id + last_login in background (don't await)
+                // Update auth link in background
                 supabase
                     .from('employees')
                     .update({
@@ -93,8 +75,8 @@ export function AuthProvider({ children }) {
                         auth_user_id: authUser.id
                     })
                     .eq('id', data.id)
-                    .then(() => {
-                        console.log('Employee linked & login updated')
+                    .then(({ error: updateErr }) => {
+                        if (updateErr) console.error('Update link error:', updateErr)
                     })
             }
         } catch (err) {
@@ -122,7 +104,12 @@ export function AuthProvider({ children }) {
         isAdmin,
         loading,
         signOut,
-        refreshEmployee: () => user && fetchEmployee(user),
+        refreshEmployee: async () => {
+            if (user) {
+                fetchingRef.current = false
+                await fetchEmployee(user)
+            }
+        },
     }
 
     return (
