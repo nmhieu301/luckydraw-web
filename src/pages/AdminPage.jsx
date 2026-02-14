@@ -30,8 +30,8 @@ function EmployeeList({ employees, loading, onReset, onResetAll, onToggleRole, o
                 <div className="text-center py-8 text-tet-pink/50">Không tìm thấy nhân viên</div>
             ) : (
                 <div className="space-y-2 max-h-[60vh] overflow-y-auto">
-                    {filtered.map(emp => (
-                        <div key={emp.id} className="glass-card p-4 hover:border-tet-gold/30 transition-colors">
+                    {filtered.map((emp, idx) => (
+                        <div key={emp.id} className="glass-card p-4 hover:border-tet-gold/30 transition-colors relative" style={{ zIndex: filtered.length - idx }}>
                             <div className="flex items-start justify-between gap-3">
                                 <div className="flex-1 min-w-0">
                                     <div className="flex items-center gap-2 flex-wrap">
@@ -548,12 +548,21 @@ export default function AdminPage() {
                 <h2 className="text-2xl font-bold font-[var(--font-display)] text-tet-gold-light">
                     👥 Quản lý
                 </h2>
-                <button
-                    onClick={exportCSV}
-                    className="px-4 py-2 rounded-xl bg-surface border border-tet-gold/20 text-tet-gold text-sm hover:bg-surface-hover transition-colors"
-                >
-                    📥 Xuất CSV
-                </button>
+                <div className="flex items-center gap-2">
+                    <button
+                        onClick={() => { fetchEmployees() }}
+                        className="px-3 py-2 rounded-xl bg-surface border border-tet-gold/20 text-tet-gold text-sm hover:bg-surface-hover transition-colors"
+                        title="Tải lại dữ liệu"
+                    >
+                        🔄
+                    </button>
+                    <button
+                        onClick={exportCSV}
+                        className="px-4 py-2 rounded-xl bg-surface border border-tet-gold/20 text-tet-gold text-sm hover:bg-surface-hover transition-colors"
+                    >
+                        📥 Xuất CSV
+                    </button>
+                </div>
             </div>
 
             {/* Stats */}
