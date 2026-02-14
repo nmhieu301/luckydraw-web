@@ -48,29 +48,23 @@ export function AuthProvider({ children }) {
         fetchingRef.current = true
 
         try {
-            console.log('Fetching employee for:', authUser.email)
+            console.log('Registering/fetching employee for:', authUser.email)
 
-            // Use SECURITY DEFINER function to bypass RLS
-            const { data, error } = await supabase.rpc('get_my_employee')
+            // Auto-register: creates employee if not exists, updates login if exists
+            const { data, error } = await supabase.rpc('auto_register_employee')
 
-            console.log('Employee RPC result:', data, error)
+            console.log('Employee result:', data, error)
 
             if (error) {
-                console.error('Error fetching employee:', error)
+                console.error('Error registering employee:', error)
                 setEmployee(null)
             } else if (!data || data.length === 0) {
-                console.log('No employee record found')
+                console.log('No employee record returned')
                 setEmployee(null)
             } else {
                 const emp = data[0]
                 setEmployee(emp)
                 console.log('Employee role:', emp.role, 'isAdmin:', emp.role === 'admin')
-
-                // Update auth link in background via SECURITY DEFINER function
-                supabase.rpc('update_my_login')
-                    .then(({ error: updateErr }) => {
-                        if (updateErr) console.error('Update login error:', updateErr)
-                    })
             }
         } catch (err) {
             console.error('Error in fetchEmployee:', err)
