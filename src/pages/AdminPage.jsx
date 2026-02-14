@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext'
 import { formatCurrency, formatDateVN, formatDateTimeVN, isValidVnpayEmail, getTodayBangkok } from '../lib/utils'
 import * as XLSX from 'xlsx'
 
-function EmployeeList({ employees, loading, onReset, searchTerm, setSearchTerm }) {
+function EmployeeList({ employees, loading, onReset, onResetAll, onToggleRole, onViewHistory, searchTerm, setSearchTerm }) {
     const filtered = employees.filter(emp =>
         emp.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (emp.full_name && emp.full_name.toLowerCase().includes(searchTerm.toLowerCase()))
@@ -46,27 +46,33 @@ function EmployeeList({ employees, loading, onReset, searchTerm, setSearchTerm }
                                     )}
                                     <div className="flex items-center gap-3 mt-2 flex-wrap">
                                         <span className="text-xs text-tet-pink/40">
-                                            Quay: {emp.spin_count || 0} lần
+                                            🎰 {emp.spin_count || 0} lần
                                         </span>
-                                        {emp.last_spin_date && (
-                                            <span className="text-xs text-tet-pink/40">
-                                                Gần nhất: {formatDateVN(emp.last_spin_date)}
+                                        {emp.total_amount > 0 && (
+                                            <span className="text-xs text-tet-gold/60">
+                                                💰 {formatCurrency(emp.total_amount)}
                                             </span>
                                         )}
-                                        {emp.last_login_at && (
-                                            <span className="text-xs text-green-400/60">
-                                                ✓ Đã đăng nhập
+                                        {emp.last_spin_date && (
+                                            <span className="text-xs text-tet-pink/40">
+                                                📅 {formatDateVN(emp.last_spin_date)}
                                             </span>
+                                        )}
+                                        {emp.last_login_at ? (
+                                            <span className="text-xs text-green-400/60">✓ Online</span>
+                                        ) : (
+                                            <span className="text-xs text-tet-pink/30">○ Chưa login</span>
                                         )}
                                     </div>
                                 </div>
-                                <button
-                                    onClick={() => onReset(emp)}
-                                    className="px-3 py-1.5 rounded-lg bg-tet-red/20 border border-tet-red/30 text-tet-red-light text-xs hover:bg-tet-red/30 transition-colors shrink-0"
-                                    title="Reset lượt quay hôm nay"
-                                >
-                                    🔄 Reset
-                                </button>
+                                {/* Actions dropdown */}
+                                <EmployeeActions
+                                    emp={emp}
+                                    onReset={onReset}
+                                    onResetAll={onResetAll}
+                                    onToggleRole={onToggleRole}
+                                    onViewHistory={onViewHistory}
+                                />
                             </div>
                         </div>
                     ))}
@@ -74,6 +80,158 @@ function EmployeeList({ employees, loading, onReset, searchTerm, setSearchTerm }
             )}
             <div className="text-xs text-tet-pink/30 mt-3 text-right">
                 Hiển thị {filtered.length}/{employees.length} nhân viên
+            </div>
+        </div>
+    )
+}
+
+function EmployeeActions({ emp, onReset, onResetAll, onToggleRole, onViewHistory }) {
+    const [open, setOpen] = useState(false)
+    const ref = useRef(null)
+
+    useEffect(() => {
+        function handleClickOutside(e) {
+            if (ref.current && !ref.current.contains(e.target)) setOpen(false)
+        }
+        document.addEventListener('mousedown', handleClickOutside)
+        return () => document.removeEventListener('mousedown', handleClickOutside)
+    }, [])
+
+    return (
+        <div className="relative" ref={ref}>
+            <button
+                onClick={() => setOpen(!open)}
+                className="px-2 py-1.5 rounded-lg bg-surface-hover border border-tet-gold/10 text-tet-gold text-sm hover:bg-tet-gold/10 transition-colors"
+            >
+                ⋯
+            </button>
+            {open && (
+                <div className="absolute right-0 top-full mt-1 w-52 rounded-xl bg-surface border border-tet-gold/20 shadow-xl z-20 py-1 animate-fade-in-up">
+                    <button
+                        onClick={() => { onViewHistory(emp); setOpen(false) }}
+                        className="w-full text-left px-4 py-2.5 text-sm text-tet-red-light hover:bg-surface-hover transition-colors flex items-center gap-2"
+                    >
+                        📋 Xem lịch sử quay
+                    </button>
+                    <button
+                        onClick={() => { onReset(emp); setOpen(false) }}
+                        className="w-full text-left px-4 py-2.5 text-sm text-tet-red-light hover:bg-surface-hover transition-colors flex items-center gap-2"
+                    >
+                        🔄 Reset lượt hôm nay
+                    </button>
+                    <button
+                        onClick={() => { onResetAll(emp); setOpen(false) }}
+                        className="w-full text-left px-4 py-2.5 text-sm text-red-400 hover:bg-surface-hover transition-colors flex items-center gap-2"
+                    >
+                        🗑️ Xoá toàn bộ lịch sử
+                    </button>
+                    <div className="border-t border-tet-gold/10 my-1" />
+                    <button
+                        onClick={() => { onToggleRole(emp); setOpen(false) }}
+                        className="w-full text-left px-4 py-2.5 text-sm text-tet-gold hover:bg-surface-hover transition-colors flex items-center gap-2"
+                    >
+                        {emp.role === 'admin' ? '👤 Hạ quyền Staff' : '👑 Nâng quyền Admin'}
+                    </button>
+                </div>
+            )}
+        </div>
+    )
+}
+
+function HistoryModal({ emp, onClose }) {
+    const [history, setHistory] = useState([])
+    const [loading, setLoading] = useState(true)
+
+    useEffect(() => {
+        fetchHistory()
+    }, [])
+
+    async function fetchHistory() {
+        const { data } = await supabase
+            .from('lucky_draw_results')
+            .select('*')
+            .eq('email', emp.email)
+            .order('draw_date', { ascending: false })
+            .limit(50)
+        setHistory(data || [])
+        setLoading(false)
+    }
+
+    const total = history.reduce((sum, r) => sum + r.amount, 0)
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={onClose}>
+            <div className="glass-card w-full max-w-md max-h-[80vh] overflow-hidden animate-bounce-in" onClick={e => e.stopPropagation()}>
+                <div className="p-5 border-b border-tet-gold/10">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <h3 className="text-lg font-bold text-tet-gold-light font-[var(--font-display)]">{emp.full_name}</h3>
+                            <p className="text-xs text-tet-pink/50">{emp.email}</p>
+                        </div>
+                        <button onClick={onClose} className="text-tet-pink/40 hover:text-tet-red-light text-xl">✕</button>
+                    </div>
+                    <div className="flex gap-3 mt-3">
+                        <div className="px-3 py-1.5 rounded-lg bg-surface/50 text-xs text-tet-gold">
+                            🎰 {history.length} lượt
+                        </div>
+                        <div className="px-3 py-1.5 rounded-lg bg-surface/50 text-xs text-tet-gold">
+                            💰 {formatCurrency(total)}
+                        </div>
+                    </div>
+                </div>
+                <div className="p-5 overflow-y-auto max-h-[50vh]">
+                    {loading ? (
+                        <div className="text-center py-6 text-tet-gold animate-pulse">Đang tải...</div>
+                    ) : history.length === 0 ? (
+                        <div className="text-center py-6 text-tet-pink/50">Chưa có lịch sử quay</div>
+                    ) : (
+                        <div className="space-y-2">
+                            {history.map(r => (
+                                <div key={r.id} className="flex items-center justify-between px-3 py-2.5 rounded-lg bg-surface/50 border border-tet-gold/5">
+                                    <div>
+                                        <div className="text-sm text-tet-gold-light">{formatDateVN(r.draw_date)}</div>
+                                        <div className="text-xs text-tet-pink/40">{formatDateTimeVN(r.created_at)}</div>
+                                    </div>
+                                    <div className={`font-bold font-[var(--font-display)] ${r.amount >= 200000 ? 'text-yellow-400' :
+                                            r.amount >= 100000 ? 'text-tet-gold' : 'text-tet-gold-light'
+                                        }`}>
+                                        {formatCurrency(r.amount)}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            </div>
+        </div>
+    )
+}
+
+function StatsPanel({ employees }) {
+    const totalEmployees = employees.length
+    const totalSpins = employees.reduce((sum, e) => sum + (e.spin_count || 0), 0)
+    const totalAmount = employees.reduce((sum, e) => sum + (e.total_amount || 0), 0)
+    const loggedIn = employees.filter(e => e.last_login_at).length
+    const today = getTodayBangkok()
+    const spunToday = employees.filter(e => e.last_spin_date === today).length
+
+    return (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
+            <div className="glass-card p-3 text-center">
+                <div className="text-lg font-bold text-tet-gold font-[var(--font-display)]">{totalEmployees}</div>
+                <div className="text-xs text-tet-pink/50">Nhân viên</div>
+            </div>
+            <div className="glass-card p-3 text-center">
+                <div className="text-lg font-bold text-tet-gold font-[var(--font-display)]">{totalSpins}</div>
+                <div className="text-xs text-tet-pink/50">Tổng lượt quay</div>
+            </div>
+            <div className="glass-card p-3 text-center">
+                <div className="text-lg font-bold text-tet-gold font-[var(--font-display)]">{formatCurrency(totalAmount)}</div>
+                <div className="text-xs text-tet-pink/50">Tổng đã phát</div>
+            </div>
+            <div className="glass-card p-3 text-center">
+                <div className="text-lg font-bold text-tet-gold font-[var(--font-display)]">{spunToday}/{loggedIn}</div>
+                <div className="text-xs text-tet-pink/50">Quay hôm nay</div>
             </div>
         </div>
     )
@@ -182,7 +340,6 @@ function ExcelImport({ onImportDone }) {
                 </p>
             </div>
 
-            {/* Errors */}
             {errors.length > 0 && (
                 <div className="mb-4 p-3 rounded-xl bg-red-900/30 border border-red-500/30">
                     <p className="text-red-300 text-sm font-medium mb-1">⚠️ Lỗi ({errors.length} dòng):</p>
@@ -196,14 +353,11 @@ function ExcelImport({ onImportDone }) {
                 </div>
             )}
 
-            {/* Preview */}
             {preview.length > 0 && !imported && (
                 <div className="mb-4">
-                    <div className="flex items-center justify-between mb-2">
-                        <p className="text-sm text-tet-gold-light font-medium">
-                            Xem trước ({preview.length} nhân viên hợp lệ)
-                        </p>
-                    </div>
+                    <p className="text-sm text-tet-gold-light font-medium mb-2">
+                        Xem trước ({preview.length} nhân viên hợp lệ)
+                    </p>
                     <div className="max-h-48 overflow-y-auto rounded-xl border border-tet-gold/10">
                         <table className="w-full text-left text-xs">
                             <thead className="bg-surface/80 sticky top-0">
@@ -241,7 +395,6 @@ function ExcelImport({ onImportDone }) {
                 </div>
             )}
 
-            {/* Success */}
             {imported && (
                 <div className="p-4 rounded-xl bg-green-900/30 border border-green-500/30 text-green-300 text-sm text-center">
                     ✅ Đã import thành công {preview.length} nhân viên!
@@ -257,16 +410,21 @@ export default function AdminPage() {
     const [loading, setLoading] = useState(true)
     const [searchTerm, setSearchTerm] = useState('')
     const [activeTab, setActiveTab] = useState('list') // 'list' | 'import'
-    const [resetMsg, setResetMsg] = useState('')
+    const [msg, setMsg] = useState({ text: '', type: '' })
+    const [historyEmp, setHistoryEmp] = useState(null)
 
     useEffect(() => {
         fetchEmployees()
     }, [])
 
+    function showMsg(text, type = 'success') {
+        setMsg({ text, type })
+        setTimeout(() => setMsg({ text: '', type: '' }), 3000)
+    }
+
     async function fetchEmployees() {
         setLoading(true)
         try {
-            // Get employees with spin stats
             const { data, error } = await supabase
                 .from('employees')
                 .select('*')
@@ -277,7 +435,6 @@ export default function AdminPage() {
                 return
             }
 
-            // Fetch spin stats for all employees  
             const { data: spinStats } = await supabase
                 .from('lucky_draw_results')
                 .select('email, draw_date, amount')
@@ -287,9 +444,10 @@ export default function AdminPage() {
             if (spinStats) {
                 spinStats.forEach(s => {
                     if (!statsByEmail[s.email]) {
-                        statsByEmail[s.email] = { count: 0, lastDate: null }
+                        statsByEmail[s.email] = { count: 0, lastDate: null, total: 0 }
                     }
                     statsByEmail[s.email].count++
+                    statsByEmail[s.email].total += s.amount
                     if (!statsByEmail[s.email].lastDate) {
                         statsByEmail[s.email].lastDate = s.draw_date
                     }
@@ -300,6 +458,7 @@ export default function AdminPage() {
                 ...emp,
                 spin_count: statsByEmail[emp.email]?.count || 0,
                 last_spin_date: statsByEmail[emp.email]?.lastDate || null,
+                total_amount: statsByEmail[emp.email]?.total || 0,
             }))
 
             setEmployees(enriched)
@@ -310,8 +469,7 @@ export default function AdminPage() {
 
     async function handleReset(emp) {
         const today = getTodayBangkok()
-        const confirmed = window.confirm(`Bạn có chắc muốn reset lượt quay hôm nay của ${emp.full_name}?`)
-        if (!confirmed) return
+        if (!window.confirm(`Reset lượt quay HÔM NAY của ${emp.full_name}?`)) return
 
         try {
             const { error } = await supabase
@@ -320,28 +478,73 @@ export default function AdminPage() {
                 .eq('email', emp.email)
                 .eq('draw_date', today)
 
-            if (error) {
-                setResetMsg(`❌ Lỗi: ${error.message}`)
-                return
-            }
+            if (error) { showMsg(`❌ Lỗi: ${error.message}`, 'error'); return }
 
-            // Log the audit
             await supabase.from('audit_logs').insert({
                 actor_user_id: user.id,
-                action: 'reset_spin',
+                action: 'reset_spin_today',
                 payload_json: { target_email: emp.email, date: today },
             })
 
-            setResetMsg(`✅ Đã reset lượt quay của ${emp.full_name}`)
-            setTimeout(() => setResetMsg(''), 3000)
+            showMsg(`✅ Đã reset lượt quay hôm nay của ${emp.full_name}`)
             fetchEmployees()
         } catch (err) {
-            setResetMsg(`❌ Lỗi: ${err.message}`)
+            showMsg(`❌ ${err.message}`, 'error')
+        }
+    }
+
+    async function handleResetAll(emp) {
+        if (!window.confirm(`⚠️ XOÁ TOÀN BỘ lịch sử quay của ${emp.full_name}?\n\nHành động này không thể hoàn tác!`)) return
+
+        try {
+            const { error } = await supabase
+                .from('lucky_draw_results')
+                .delete()
+                .eq('email', emp.email)
+
+            if (error) { showMsg(`❌ Lỗi: ${error.message}`, 'error'); return }
+
+            await supabase.from('audit_logs').insert({
+                actor_user_id: user.id,
+                action: 'reset_all_history',
+                payload_json: { target_email: emp.email },
+            })
+
+            showMsg(`✅ Đã xoá toàn bộ lịch sử của ${emp.full_name}`)
+            fetchEmployees()
+        } catch (err) {
+            showMsg(`❌ ${err.message}`, 'error')
+        }
+    }
+
+    async function handleToggleRole(emp) {
+        const newRole = emp.role === 'admin' ? 'staff' : 'admin'
+        const label = newRole === 'admin' ? 'Admin' : 'Staff'
+        if (!window.confirm(`Đổi quyền ${emp.full_name} thành ${label}?`)) return
+
+        try {
+            const { error } = await supabase
+                .from('employees')
+                .update({ role: newRole })
+                .eq('id', emp.id)
+
+            if (error) { showMsg(`❌ Lỗi: ${error.message}`, 'error'); return }
+
+            await supabase.from('audit_logs').insert({
+                actor_user_id: user.id,
+                action: 'change_role',
+                payload_json: { target_email: emp.email, old_role: emp.role, new_role: newRole },
+            })
+
+            showMsg(`✅ Đã đổi ${emp.full_name} thành ${label}`)
+            fetchEmployees()
+        } catch (err) {
+            showMsg(`❌ ${err.message}`, 'error')
         }
     }
 
     function exportCSV() {
-        const headers = ['Email', 'Họ tên', 'Phòng ban', 'Mã NV', 'Vai trò', 'Số lần quay', 'Quay gần nhất', 'Đăng nhập gần nhất']
+        const headers = ['Email', 'Họ tên', 'Phòng ban', 'Mã NV', 'Vai trò', 'Số lần quay', 'Tổng nhận', 'Quay gần nhất', 'Đăng nhập gần nhất']
         const rows = employees.map(emp => [
             emp.email,
             emp.full_name,
@@ -349,6 +552,7 @@ export default function AdminPage() {
             emp.employee_code || '',
             emp.role,
             emp.spin_count || 0,
+            emp.total_amount || 0,
             emp.last_spin_date ? formatDateVN(emp.last_spin_date) : '',
             emp.last_login_at ? formatDateTimeVN(emp.last_login_at) : 'Chưa',
         ])
@@ -365,9 +569,12 @@ export default function AdminPage() {
 
     return (
         <div className="max-w-2xl mx-auto px-4 py-6">
-            <div className="flex items-center justify-between mb-6 animate-fade-in-up">
+            {/* History Modal */}
+            {historyEmp && <HistoryModal emp={historyEmp} onClose={() => setHistoryEmp(null)} />}
+
+            <div className="flex items-center justify-between mb-4 animate-fade-in-up">
                 <h2 className="text-2xl font-bold font-[var(--font-display)] text-tet-gold-light">
-                    👥 Quản lý nhân viên
+                    👥 Quản lý
                 </h2>
                 <button
                     onClick={exportCSV}
@@ -377,13 +584,16 @@ export default function AdminPage() {
                 </button>
             </div>
 
+            {/* Stats */}
+            <StatsPanel employees={employees} />
+
             {/* Tabs */}
             <div className="flex gap-2 mb-4 animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
                 <button
                     onClick={() => setActiveTab('list')}
                     className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-medium transition-all ${activeTab === 'list'
-                            ? 'bg-tet-gold/20 text-tet-gold border border-tet-gold/30'
-                            : 'bg-surface/50 text-tet-pink/60 border border-transparent hover:bg-surface-hover'
+                        ? 'bg-tet-gold/20 text-tet-gold border border-tet-gold/30'
+                        : 'bg-surface/50 text-tet-pink/60 border border-transparent hover:bg-surface-hover'
                         }`}
                 >
                     📋 Danh sách ({employees.length})
@@ -391,19 +601,18 @@ export default function AdminPage() {
                 <button
                     onClick={() => setActiveTab('import')}
                     className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-medium transition-all ${activeTab === 'import'
-                            ? 'bg-tet-gold/20 text-tet-gold border border-tet-gold/30'
-                            : 'bg-surface/50 text-tet-pink/60 border border-transparent hover:bg-surface-hover'
+                        ? 'bg-tet-gold/20 text-tet-gold border border-tet-gold/30'
+                        : 'bg-surface/50 text-tet-pink/60 border border-transparent hover:bg-surface-hover'
                         }`}
                 >
                     📤 Import Excel
                 </button>
             </div>
 
-            {/* Reset message */}
-            {resetMsg && (
-                <div className={`mb-4 p-3 rounded-xl text-sm ${resetMsg.startsWith('✅') ? 'bg-green-900/30 border border-green-500/30 text-green-300' : 'bg-red-900/30 border border-red-500/30 text-red-300'
-                    }`}>
-                    {resetMsg}
+            {/* Message */}
+            {msg.text && (
+                <div className={`mb-4 p-3 rounded-xl text-sm ${msg.type === 'error' ? 'bg-red-900/30 border border-red-500/30 text-red-300' : 'bg-green-900/30 border border-green-500/30 text-green-300'}`}>
+                    {msg.text}
                 </div>
             )}
 
@@ -414,6 +623,9 @@ export default function AdminPage() {
                         employees={employees}
                         loading={loading}
                         onReset={handleReset}
+                        onResetAll={handleResetAll}
+                        onToggleRole={handleToggleRole}
+                        onViewHistory={setHistoryEmp}
                         searchTerm={searchTerm}
                         setSearchTerm={setSearchTerm}
                     />
