@@ -66,16 +66,10 @@ export function AuthProvider({ children }) {
                 setEmployee(emp)
                 console.log('Employee role:', emp.role, 'isAdmin:', emp.role === 'admin')
 
-                // Update auth link in background
-                supabase
-                    .from('employees')
-                    .update({
-                        last_login_at: new Date().toISOString(),
-                        auth_user_id: authUser.id
-                    })
-                    .eq('id', emp.id)
+                // Update auth link in background via SECURITY DEFINER function
+                supabase.rpc('update_my_login')
                     .then(({ error: updateErr }) => {
-                        if (updateErr) console.error('Update link error:', updateErr)
+                        if (updateErr) console.error('Update login error:', updateErr)
                     })
             }
         } catch (err) {

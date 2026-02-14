@@ -147,12 +147,8 @@ function HistoryModal({ emp, onClose }) {
     }, [])
 
     async function fetchHistory() {
-        const { data } = await supabase
-            .from('lucky_draw_results')
-            .select('*')
-            .eq('email', emp.email)
-            .order('draw_date', { ascending: false })
-            .limit(50)
+        const { data, error } = await supabase.rpc('admin_get_history', { target_email: emp.email })
+        if (error) console.error('History error:', error)
         setHistory(data || [])
         setLoading(false)
     }
@@ -193,7 +189,7 @@ function HistoryModal({ emp, onClose }) {
                                         <div className="text-xs text-tet-pink/40">{formatDateTimeVN(r.created_at)}</div>
                                     </div>
                                     <div className={`font-bold font-[var(--font-display)] ${r.amount >= 200000 ? 'text-yellow-400' :
-                                            r.amount >= 100000 ? 'text-tet-gold' : 'text-tet-gold-light'
+                                        r.amount >= 100000 ? 'text-tet-gold' : 'text-tet-gold-light'
                                         }`}>
                                         {formatCurrency(r.amount)}
                                     </div>
@@ -425,36 +421,32 @@ export default function AdminPage() {
     async function fetchEmployees() {
         setLoading(true)
         try {
-            const { data, error } = await supabase
-                .from('employees')
-                .select('*')
-                .order('created_at', { ascending: false })
+            // Use SECURITY DEFINER functions to bypass RLS
+            const { data: empData, error: empError } = await supabase.rpc('admin_list_employees')
 
-            if (error) {
-                console.error('Error fetching employees:', error)
+            if (empError) {
+                console.error('Error fetching employees:', empError)
                 return
             }
 
-            const { data: spinStats } = await supabase
-                .from('lucky_draw_results')
-                .select('email, draw_date, amount')
-                .order('draw_date', { ascending: false })
+            const { data: spinStats, error: statsError } = await supabase.rpc('admin_get_spin_stats')
+
+            if (statsError) {
+                console.error('Error fetching stats:', statsError)
+            }
 
             const statsByEmail = {}
             if (spinStats) {
                 spinStats.forEach(s => {
-                    if (!statsByEmail[s.email]) {
-                        statsByEmail[s.email] = { count: 0, lastDate: null, total: 0 }
-                    }
-                    statsByEmail[s.email].count++
-                    statsByEmail[s.email].total += s.amount
-                    if (!statsByEmail[s.email].lastDate) {
-                        statsByEmail[s.email].lastDate = s.draw_date
+                    statsByEmail[s.email] = {
+                        count: s.spin_count,
+                        total: s.total_amount,
+                        lastDate: s.last_spin_date,
                     }
                 })
             }
 
-            const enriched = (data || []).map(emp => ({
+            const enriched = (empData || []).map(emp => ({
                 ...emp,
                 spin_count: statsByEmail[emp.email]?.count || 0,
                 last_spin_date: statsByEmail[emp.email]?.lastDate || null,
@@ -472,19 +464,12 @@ export default function AdminPage() {
         if (!window.confirm(`Reset lượt quay HÔM NAY của ${emp.full_name}?`)) return
 
         try {
-            const { error } = await supabase
-                .from('lucky_draw_results')
-                .delete()
-                .eq('email', emp.email)
-                .eq('draw_date', today)
+            const { error } = await supabase.rpc('admin_reset_spin', {
+                target_email: emp.email,
+                target_date: today,
+            })
 
             if (error) { showMsg(`❌ Lỗi: ${error.message}`, 'error'); return }
-
-            await supabase.from('audit_logs').insert({
-                actor_user_id: user.id,
-                action: 'reset_spin_today',
-                payload_json: { target_email: emp.email, date: today },
-            })
 
             showMsg(`✅ Đã reset lượt quay hôm nay của ${emp.full_name}`)
             fetchEmployees()
@@ -497,18 +482,11 @@ export default function AdminPage() {
         if (!window.confirm(`⚠️ XOÁ TOÀN BỘ lịch sử quay của ${emp.full_name}?\n\nHành động này không thể hoàn tác!`)) return
 
         try {
-            const { error } = await supabase
-                .from('lucky_draw_results')
-                .delete()
-                .eq('email', emp.email)
+            const { error } = await supabase.rpc('admin_reset_spin', {
+                target_email: emp.email,
+            })
 
             if (error) { showMsg(`❌ Lỗi: ${error.message}`, 'error'); return }
-
-            await supabase.from('audit_logs').insert({
-                actor_user_id: user.id,
-                action: 'reset_all_history',
-                payload_json: { target_email: emp.email },
-            })
 
             showMsg(`✅ Đã xoá toàn bộ lịch sử của ${emp.full_name}`)
             fetchEmployees()
@@ -523,18 +501,12 @@ export default function AdminPage() {
         if (!window.confirm(`Đổi quyền ${emp.full_name} thành ${label}?`)) return
 
         try {
-            const { error } = await supabase
-                .from('employees')
-                .update({ role: newRole })
-                .eq('id', emp.id)
+            const { error } = await supabase.rpc('admin_update_role', {
+                target_id: emp.id,
+                new_role: newRole,
+            })
 
             if (error) { showMsg(`❌ Lỗi: ${error.message}`, 'error'); return }
-
-            await supabase.from('audit_logs').insert({
-                actor_user_id: user.id,
-                action: 'change_role',
-                payload_json: { target_email: emp.email, old_role: emp.role, new_role: newRole },
-            })
 
             showMsg(`✅ Đã đổi ${emp.full_name} thành ${label}`)
             fetchEmployees()
