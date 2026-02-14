@@ -50,22 +50,21 @@ export function AuthProvider({ children }) {
         try {
             console.log('Fetching employee for:', authUser.email)
 
-            const { data, error } = await supabase
-                .from('employees')
-                .select('*')
-                .eq('email', authUser.email)
-                .maybeSingle()
+            // Use SECURITY DEFINER function to bypass RLS
+            const { data, error } = await supabase.rpc('get_my_employee')
 
-            console.log('Employee result:', data, error)
+            console.log('Employee RPC result:', data, error)
 
             if (error) {
                 console.error('Error fetching employee:', error)
                 setEmployee(null)
-            } else if (!data) {
+            } else if (!data || data.length === 0) {
+                console.log('No employee record found')
                 setEmployee(null)
             } else {
-                setEmployee(data)
-                console.log('Employee role:', data.role, 'isAdmin:', data.role === 'admin')
+                const emp = data[0]
+                setEmployee(emp)
+                console.log('Employee role:', emp.role, 'isAdmin:', emp.role === 'admin')
 
                 // Update auth link in background
                 supabase
@@ -74,7 +73,7 @@ export function AuthProvider({ children }) {
                         last_login_at: new Date().toISOString(),
                         auth_user_id: authUser.id
                     })
-                    .eq('id', data.id)
+                    .eq('id', emp.id)
                     .then(({ error: updateErr }) => {
                         if (updateErr) console.error('Update link error:', updateErr)
                     })
