@@ -57,8 +57,7 @@ export function AuthProvider({ children }) {
                 console.error('Error fetching employee:', error)
                 setEmployee(null)
             } else {
-                setEmployee(data)
-                // Update last_login_at and auth_user_id
+                // Update last_login_at and auth_user_id first
                 await supabase
                     .from('employees')
                     .update({
@@ -66,6 +65,15 @@ export function AuthProvider({ children }) {
                         auth_user_id: authUser.id
                     })
                     .eq('id', data.id)
+
+                // Re-fetch to get the most up-to-date employee data
+                const { data: refreshed } = await supabase
+                    .from('employees')
+                    .select('*')
+                    .eq('id', data.id)
+                    .single()
+
+                setEmployee(refreshed || data)
             }
         } catch (err) {
             console.error('Error in fetchEmployee:', err)
