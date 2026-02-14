@@ -171,6 +171,9 @@ export default function LoginPage() {
                                     Kiểm tra hộp thư <strong className="text-tet-gold">{email}</strong> và nhấn vào đường dẫn để đăng nhập.
                                 </p>
                                 <p className="text-xs text-tet-pink/40 mt-3">
+                                    ⏰ Đường dẫn có hiệu lực trong <strong className="text-tet-gold/70">5 phút</strong>. Hết hạn vui lòng gửi lại.
+                                </p>
+                                <p className="text-xs text-tet-pink/40 mt-1">
                                     💡 Nếu không thấy email, hãy kiểm tra thư mục Spam/Junk
                                 </p>
                             </div>
