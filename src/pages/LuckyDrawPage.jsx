@@ -3,10 +3,11 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { formatCurrency, getTodayBangkok, PRIZE_LIST } from '../lib/utils'
 
-// Slot machine values for animation
+// Slot machine values for animation (envelopes + amounts)
+const ENVELOPE_ICONS = ['🧧', '🏮', '🎋', '🐴', '🎊', '🎆']
 const SLOT_ITEMS = [
-    10000, 20000, 50000, 100000, 200000, 500000,
-    10000, 20000, 50000, 100000, 200000, 500000,
+    ...ENVELOPE_ICONS,
+    ...ENVELOPE_ICONS,
     10000, 20000, 50000, 100000, 200000, 500000,
 ]
 
@@ -174,23 +175,35 @@ export default function LuckyDrawPage() {
                     </h3>
                     <p className="text-tet-pink/80 text-sm mb-4">Tết Bính Ngọ 2026</p>
 
-                    {/* Slot Machine */}
-                    <div className="slot-container mb-5 mx-auto max-w-xs">
-                        <div
-                            ref={slotRef}
-                            className="slot-strip"
-                            style={{
-                                transform: `translateY(-${slotOffset}px)`,
-                                transition: spinning ? 'transform 2.5s cubic-bezier(0.17, 0.67, 0.12, 0.99)' : 'none',
-                            }}
-                        >
-                            {SLOT_ITEMS.map((val, i) => (
-                                <div key={i} className="slot-item">
-                                    {formatCurrency(val)}
-                                </div>
-                            ))}
+                    {/* Slot Machine - only visible during spin */}
+                    {spinning ? (
+                        <div className="slot-container mb-5 mx-auto max-w-xs">
+                            <div
+                                ref={slotRef}
+                                className="slot-strip"
+                                style={{
+                                    transform: `translateY(-${slotOffset}px)`,
+                                    transition: 'transform 2.5s cubic-bezier(0.17, 0.67, 0.12, 0.99)',
+                                }}
+                            >
+                                {SLOT_ITEMS.map((val, i) => (
+                                    <div key={i} className="slot-item">
+                                        {typeof val === 'number' ? formatCurrency(val) : <span className="text-4xl">{val}</span>}
+                                    </div>
+                                ))}
+                            </div>
                         </div>
-                    </div>
+                    ) : !todayResult && (
+                        <div className="mb-5 mx-auto max-w-xs py-6">
+                            <div className="text-7xl animate-float mb-3">🧧</div>
+                            <p className="text-tet-gold/70 text-sm font-medium">Bấm nút bên dưới để mở lì xì!</p>
+                            <div className="flex justify-center gap-2 mt-3">
+                                <span className="text-2xl opacity-60 animate-float" style={{ animationDelay: '0s' }}>🏮</span>
+                                <span className="text-2xl opacity-40 animate-float" style={{ animationDelay: '0.5s' }}>✨</span>
+                                <span className="text-2xl opacity-60 animate-float" style={{ animationDelay: '1s' }}>🏮</span>
+                            </div>
+                        </div>
+                    )}
 
                     {/* Error */}
                     {error && (
