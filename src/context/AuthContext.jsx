@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from 'react'
+import { createContext, useContext, useEffect, useState, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 
 const AuthContext = createContext({})
@@ -12,37 +12,65 @@ export function AuthProvider({ children }) {
     const [user, setUser] = useState(null)
     const [employee, setEmployee] = useState(null)
     const [loading, setLoading] = useState(true)
+    const fetchingRef = useRef(false)
 
     useEffect(() => {
-        // Get initial session
-        supabase.auth.getSession().then(({ data: { session } }) => {
-            setSession(session)
-            setUser(session?.user ?? null)
-            if (session?.user) {
-                fetchEmployee(session.user)
-            } else {
+        // Safety timeout - never stay loading > 8s
+        const safetyTimer = setTimeout(() => {
+            setLoading(false)
+        }, 8000)
+
+        async function initAuth() {
+            try {
+                // First check for existing session
+                const { data: { session: currentSession } } = await supabase.auth.getSession()
+
+                if (currentSession?.user) {
+                    setSession(currentSession)
+                    setUser(currentSession.user)
+                    await fetchEmployee(currentSession.user)
+                } else {
+                    setLoading(false)
+                }
+            } catch (err) {
+                console.error('Init auth error:', err)
                 setLoading(false)
             }
-        })
+        }
 
-        // Listen for auth changes
+        initAuth()
+
+        // Listen for auth changes (magic link, sign out, etc.)
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
-            async (_event, session) => {
-                setSession(session)
-                setUser(session?.user ?? null)
-                if (session?.user) {
-                    await fetchEmployee(session.user)
-                } else {
+            async (event, newSession) => {
+                console.log('Auth event:', event)
+
+                if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+                    if (newSession?.user) {
+                        setSession(newSession)
+                        setUser(newSession.user)
+                        await fetchEmployee(newSession.user)
+                    }
+                } else if (event === 'SIGNED_OUT') {
+                    setSession(null)
+                    setUser(null)
                     setEmployee(null)
                     setLoading(false)
                 }
             }
         )
 
-        return () => subscription.unsubscribe()
+        return () => {
+            clearTimeout(safetyTimer)
+            subscription.unsubscribe()
+        }
     }, [])
 
     async function fetchEmployee(authUser) {
+        // Prevent concurrent fetches
+        if (fetchingRef.current) return
+        fetchingRef.current = true
+
         try {
             const { data, error } = await supabase
                 .from('employees')
@@ -51,7 +79,7 @@ export function AuthProvider({ children }) {
                 .single()
 
             if (error && error.code === 'PGRST116') {
-                // No employee record found — this is a new user
+                // No employee record found — new user, still allow access
                 setEmployee(null)
             } else if (error) {
                 console.error('Error fetching employee:', error)
@@ -79,6 +107,7 @@ export function AuthProvider({ children }) {
             console.error('Error in fetchEmployee:', err)
             setEmployee(null)
         } finally {
+            fetchingRef.current = false
             setLoading(false)
         }
     }
