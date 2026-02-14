@@ -1,6 +1,7 @@
 import { AuthProvider, useAuth } from './context/AuthContext'
 import LoginPage from './pages/LoginPage'
 import AppLayout from './components/AppLayout'
+import FireworkEffect from './components/FireworkEffect'
 import './index.css'
 
 function AppContent() {
@@ -10,7 +11,7 @@ function AppContent() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center animate-fade-in-up">
-          <div className="text-6xl mb-4 animate-float">🧧</div>
+          <img src="/vnpay-logo.svg" alt="VNPAY" className="w-20 h-20 mx-auto mb-4 animate-float" />
           <h1 className="text-2xl font-bold text-tet-gold font-[var(--font-display)]">
             Lì Xì Lucky Draw
           </h1>
@@ -30,6 +31,7 @@ function AppContent() {
 export default function App() {
   return (
     <AuthProvider>
+      <FireworkEffect />
       <AppContent />
     </AuthProvider>
   )

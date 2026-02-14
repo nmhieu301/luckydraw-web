@@ -86,7 +86,7 @@ export default function HistoryPage() {
                         >
                             <div className="flex items-center gap-3">
                                 <div className="w-10 h-10 rounded-full bg-tet-red/20 flex items-center justify-center text-lg">
-                                    🧧
+                                    🎁
                                 </div>
                                 <div>
                                     <div className="text-sm text-tet-gold-light font-medium">
@@ -98,8 +98,8 @@ export default function HistoryPage() {
                                 </div>
                             </div>
                             <div className={`font-bold font-[var(--font-display)] ${result.amount >= 200000 ? 'text-yellow-400 text-xl' :
-                                    result.amount >= 100000 ? 'text-tet-gold text-lg' :
-                                        'text-tet-gold-light'
+                                result.amount >= 100000 ? 'text-tet-gold text-lg' :
+                                    'text-tet-gold-light'
                                 }`}>
                                 {formatCurrency(result.amount)}
                             </div>

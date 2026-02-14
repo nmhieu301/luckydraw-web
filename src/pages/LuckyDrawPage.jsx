@@ -3,11 +3,11 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { formatCurrency, getTodayBangkok, PRIZE_LIST } from '../lib/utils'
 
-// Slot machine values for animation (envelopes + amounts)
-const ENVELOPE_ICONS = ['🧧', '🏮', '🎋', '🐴', '🎊', '🎆']
+// Slot machine values for animation (Vietnamese labels + amounts)
+const SLOT_LABELS = ['Lì Xì', 'May Mắn', 'Phát Tài', 'An Khang', 'Hạnh Phúc', 'Tài Lộc']
 const SLOT_ITEMS = [
-    ...ENVELOPE_ICONS,
-    ...ENVELOPE_ICONS,
+    ...SLOT_LABELS,
+    ...SLOT_LABELS,
     10000, 20000, 50000, 100000, 200000, 500000,
 ]
 
@@ -140,7 +140,7 @@ export default function LuckyDrawPage() {
     function getResultMessage(amount) {
         if (amount >= 200000) return '🎉 ĐẠI PHÁT! Chúc mừng bạn!'
         if (amount >= 100000) return '🎊 Tuyệt vời! Một lì xì hên!'
-        if (amount >= 50000) return '🧧 Năm mới phát tài!'
+        if (amount >= 50000) return '🎁 Năm mới phát tài!'
         return '🎋 Chúc mừng năm mới!'
     }
 
@@ -188,19 +188,19 @@ export default function LuckyDrawPage() {
                             >
                                 {SLOT_ITEMS.map((val, i) => (
                                     <div key={i} className="slot-item">
-                                        {typeof val === 'number' ? formatCurrency(val) : <span className="text-4xl">{val}</span>}
+                                        {typeof val === 'number' ? formatCurrency(val) : <span className="text-lg font-bold text-tet-gold">{val}</span>}
                                     </div>
                                 ))}
                             </div>
                         </div>
                     ) : !todayResult && (
                         <div className="mb-5 mx-auto max-w-xs py-6">
-                            <div className="text-7xl animate-float mb-3">🧧</div>
+                            <img src="/vnpay-logo.svg" alt="VNPAY Lì Xì" className="w-24 h-24 mx-auto animate-float mb-3" />
                             <p className="text-tet-gold/70 text-sm font-medium">Bấm nút bên dưới để mở lì xì!</p>
-                            <div className="flex justify-center gap-2 mt-3">
-                                <span className="text-2xl opacity-60 animate-float" style={{ animationDelay: '0s' }}>🏮</span>
-                                <span className="text-2xl opacity-40 animate-float" style={{ animationDelay: '0.5s' }}>✨</span>
-                                <span className="text-2xl opacity-60 animate-float" style={{ animationDelay: '1s' }}>🏮</span>
+                            <div className="flex justify-center gap-3 mt-3">
+                                <span className="text-sm opacity-60 animate-float text-tet-gold" style={{ animationDelay: '0s' }}>✨</span>
+                                <span className="text-sm opacity-80 animate-float text-yellow-300" style={{ animationDelay: '0.3s' }}>Chúc Mừng Năm Mới</span>
+                                <span className="text-sm opacity-60 animate-float text-tet-gold" style={{ animationDelay: '0.6s' }}>✨</span>
                             </div>
                         </div>
                     )}

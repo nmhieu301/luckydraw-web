@@ -88,8 +88,8 @@ export default function LoginPage() {
     return (
         <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
             {/* Decorative elements */}
-            <div className="absolute top-10 left-10 text-6xl opacity-20 animate-float select-none">🏮</div>
-            <div className="absolute top-20 right-16 text-5xl opacity-15 animate-float select-none" style={{ animationDelay: '1s' }}>🧧</div>
+            <div className="absolute top-10 left-10 text-6xl opacity-20 animate-float select-none">🌸</div>
+            <div className="absolute top-20 right-16 text-5xl opacity-15 animate-float select-none" style={{ animationDelay: '1s' }}>🎆</div>
             <div className="absolute bottom-20 left-20 text-4xl opacity-10 animate-float select-none" style={{ animationDelay: '2s' }}>🎋</div>
             <div className="absolute bottom-10 right-10 text-6xl opacity-15 animate-float select-none" style={{ animationDelay: '0.5s' }}>🐴</div>
 
