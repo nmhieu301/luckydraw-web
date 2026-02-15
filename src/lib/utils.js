@@ -23,27 +23,18 @@ export function isValidVnpayEmail(email) {
 }
 
 /**
- * Weighted random prize selection
- * Returns amount in VND
+ * Fixed prize pool structure
+ * Total: 74 prizes, 3,000,000 VND budget
  */
 const PRIZES = [
-    { amount: 10000, weight: 35 },
-    { amount: 20000, weight: 25 },
-    { amount: 50000, weight: 20 },
-    { amount: 100000, weight: 12 },
-    { amount: 200000, weight: 6 },
-    { amount: 500000, weight: 2 },
+    { amount: 500000, qty: 1 },
+    { amount: 200000, qty: 2 },
+    { amount: 100000, qty: 4 },
+    { amount: 50000, qty: 12 },
+    { amount: 20000, qty: 55 },
 ]
 
-export function getWeightedRandomPrize() {
-    const totalWeight = PRIZES.reduce((sum, p) => sum + p.weight, 0)
-    let random = Math.random() * totalWeight
-    for (const prize of PRIZES) {
-        random -= prize.weight
-        if (random <= 0) return prize.amount
-    }
-    return PRIZES[0].amount
-}
+export { PRIZES }
 
 export const PRIZE_LIST = PRIZES.map(p => p.amount)
 

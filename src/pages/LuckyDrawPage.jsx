@@ -1,14 +1,14 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
-import { formatCurrency, getTodayBangkok, PRIZE_LIST } from '../lib/utils'
+import { formatCurrency, getTodayBangkok, PRIZE_LIST, PRIZES } from '../lib/utils'
 
 // Slot machine values for animation (Vietnamese labels + amounts)
 const SLOT_LABELS = ['Lì Xì', 'May Mắn', 'Phát Tài', 'An Khang', 'Hạnh Phúc', 'Tài Lộc']
 const SLOT_ITEMS = [
     ...SLOT_LABELS,
     ...SLOT_LABELS,
-    10000, 20000, 50000, 100000, 200000, 500000,
+    20000, 50000, 100000, 200000, 500000,
 ]
 
 function Confetti() {
@@ -55,17 +55,16 @@ export default function LuckyDrawPage() {
     const slotRef = useRef(null)
     const [slotOffset, setSlotOffset] = useState(0)
 
-    // Check if user already spun today
+    // Check if user already spun
     const checkTodayResult = useCallback(async () => {
         if (!user) return
-        const today = getTodayBangkok()
         try {
             const { data, error: fetchError } = await supabase.rpc('get_my_today_result')
 
             const todayData = Array.isArray(data) ? data[0] : data
 
             if (fetchError) {
-                console.error('Error checking today result:', fetchError)
+                console.error('Error checking result:', fetchError)
                 return
             }
             if (todayData) {
@@ -91,9 +90,14 @@ export default function LuckyDrawPage() {
             const { data, error: rpcError } = await supabase.rpc('spin_lucky_draw')
 
             if (rpcError) {
-                if (rpcError.message.includes('already spun')) {
-                    setError('Bạn đã quay rồi hôm nay! Hãy quay lại ngày mai nhé.')
+                if (rpcError.message.includes('đã quay') || rpcError.message.includes('already')) {
+                    setError('Bạn đã quay lì xì rồi!')
                     await checkTodayResult()
+                    setSpinning(false)
+                    return
+                }
+                if (rpcError.message.includes('hết')) {
+                    setError('Giải thưởng đã hết! Vui lòng liên hệ Admin.')
                     setSpinning(false)
                     return
                 }
@@ -105,7 +109,6 @@ export default function LuckyDrawPage() {
             // Calculate slot position to land on the result
             const targetIndex = PRIZE_LIST.indexOf(amount)
             const totalItems = SLOT_ITEMS.length
-            // We want to spin through many items and land on the correct one
             const finalIndex = totalItems - PRIZE_LIST.length + targetIndex
             const itemHeight = 80
             const offset = finalIndex * itemHeight
@@ -152,6 +155,13 @@ export default function LuckyDrawPage() {
     return (
         <div className="max-w-lg mx-auto px-4 py-6">
             {showConfetti && <Confetti />}
+
+            {/* Program end date banner */}
+            <div className="mb-4 p-3 rounded-xl bg-amber-900/30 border border-tet-gold/30 text-center animate-fade-in-up">
+                <p className="text-sm text-tet-gold">
+                    ⏳ Chương trình kết thúc ngày <strong>01/03/2026</strong>. Chi trả tập trung sau khi kết thúc.
+                </p>
+            </div>
 
             {/* Greeting */}
             <div className="text-center mb-6 animate-fade-in-up">
@@ -209,14 +219,18 @@ export default function LuckyDrawPage() {
                         </div>
                     )}
 
-                    {/* Today's result */}
+                    {/* Result display */}
                     {todayResult && !spinning && (
                         <div className={`mb-4 ${showResult ? 'animate-bounce-in' : 'animate-fade-in-up'}`}>
                             <p className="text-tet-pink/80 text-sm mb-2">
-                                {showResult ? getResultMessage(todayResult.amount) : 'Kết quả lì xì của bạn:'}
+                                {showResult ? getResultMessage(todayResult.amount) : '✅ Bạn đã quay thành công:'}
                             </p>
                             <div className="text-4xl font-bold text-tet-gold font-[var(--font-display)] animate-pulse-glow inline-block px-6 py-3 rounded-2xl bg-surface/50">
                                 {formatCurrency(todayResult.amount)}
+                            </div>
+                            <div className="mt-4 p-3 rounded-xl bg-emerald-900/30 border border-emerald-500/20 text-emerald-300/90 text-sm leading-relaxed">
+                                ✅ Kết quả đã được ghi nhận.<br />
+                                Đại diện phòng sẽ chuyển lì xì qua <strong>Ví VNPAY</strong> sau <strong>01/03/2026</strong>.
                             </div>
                         </div>
                     )}
@@ -241,7 +255,7 @@ export default function LuckyDrawPage() {
                         </button>
                     ) : (
                         <div className="text-sm text-tet-pink/50 mt-2">
-                            🎁 Bạn đã nhận lì xì rồi. Liên hệ Admin để được reset!
+                            🎁 Bạn đã nhận lì xì. Mỗi người chỉ quay 1 lần duy nhất.
                         </div>
                     )}
                 </div>
@@ -249,21 +263,17 @@ export default function LuckyDrawPage() {
 
             {/* Prize table */}
             <div className="glass-card p-5 animate-fade-in-up" style={{ animationDelay: '0.3s' }}>
-                <h4 className="text-sm font-semibold text-tet-gold mb-3 flex items-center gap-2">
-                    <span>📊</span> Bảng giải thưởng
+                <h4 className="text-sm font-semibold text-tet-gold mb-1 flex items-center gap-2">
+                    <span>📊</span> Cơ cấu giải thưởng
                 </h4>
-                <div className="grid grid-cols-2 gap-2">
-                    {[
-                        { amount: 10000, chance: '35%' },
-                        { amount: 20000, chance: '25%' },
-                        { amount: 50000, chance: '20%' },
-                        { amount: 100000, chance: '12%' },
-                        { amount: 200000, chance: '6%' },
-                        { amount: 500000, chance: '2%' },
-                    ].map(p => (
+                <p className="text-xs text-tet-pink/40 mb-3">
+                    Tổng ngân sách: <strong className="text-tet-gold/70">3.000.000đ</strong> • 74 giải
+                </p>
+                <div className="space-y-2">
+                    {PRIZES.map(p => (
                         <div key={p.amount} className="flex items-center justify-between px-3 py-2 rounded-lg bg-surface/50 border border-tet-gold/10">
                             <span className="text-tet-gold-light font-semibold text-sm">{formatCurrency(p.amount)}</span>
-                            <span className="text-tet-pink/50 text-xs">{p.chance}</span>
+                            <span className="text-tet-pink/50 text-xs">{p.qty} giải</span>
                         </div>
                     ))}
                 </div>
