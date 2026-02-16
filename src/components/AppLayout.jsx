@@ -28,9 +28,17 @@ export default function AppLayout() {
     function renderPage() {
         return (
             <Suspense fallback={<TabLoading />}>
-                {activeTab === 'draw' && <LuckyDrawPage />}
-                {activeTab === 'history' && <HistoryPage />}
-                {activeTab === 'admin' && isAdmin && <AdminPage />}
+                <div style={{ display: activeTab === 'draw' ? 'block' : 'none' }}>
+                    <LuckyDrawPage />
+                </div>
+                <div style={{ display: activeTab === 'history' ? 'block' : 'none' }}>
+                    <HistoryPage />
+                </div>
+                {isAdmin && (
+                    <div style={{ display: activeTab === 'admin' ? 'block' : 'none' }}>
+                        <AdminPage />
+                    </div>
+                )}
             </Suspense>
         )
     }
