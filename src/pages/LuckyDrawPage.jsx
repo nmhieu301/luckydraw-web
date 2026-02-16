@@ -3,12 +3,21 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { formatCurrency, getTodayBangkok, PRIZE_LIST, PRIZES } from '../lib/utils'
 
-// Slot machine values for animation (Vietnamese labels + amounts)
+// Slot machine values for animation
 const SLOT_LABELS = ['Lì Xì', 'May Mắn', 'Phát Tài', 'An Khang', 'Hạnh Phúc', 'Tài Lộc']
 const SLOT_ITEMS = [
     ...SLOT_LABELS,
     ...SLOT_LABELS,
     22222, 68686, 86868, 123456, 456789,
+]
+
+// Prize tier styling — big to small, with emojis, colors, and sizes
+const PRIZE_TIERS = [
+    { amount: 456789, emoji: '👑', label: 'JACKPOT', color: 'from-yellow-300 via-amber-400 to-yellow-500', glow: 'shadow-amber-400/40', textSize: 'text-2xl', ring: 'ring-2 ring-amber-400/50' },
+    { amount: 123456, emoji: '💎', label: 'Kim Cương', color: 'from-cyan-300 via-blue-400 to-indigo-400', glow: 'shadow-blue-400/30', textSize: 'text-xl', ring: 'ring-2 ring-blue-400/40' },
+    { amount: 86868, emoji: '🔥', label: 'Phát Lộc', color: 'from-orange-300 via-red-400 to-rose-400', glow: 'shadow-red-400/25', textSize: 'text-lg', ring: 'ring-1 ring-red-400/30' },
+    { amount: 68686, emoji: '🎯', label: 'Lộc Phát', color: 'from-emerald-300 via-green-400 to-teal-400', glow: 'shadow-green-400/20', textSize: 'text-base', ring: 'ring-1 ring-green-400/30' },
+    { amount: 22222, emoji: '🍀', label: 'May Mắn', color: 'from-pink-300 via-rose-300 to-fuchsia-300', glow: 'shadow-pink-300/15', textSize: 'text-sm', ring: '' },
 ]
 
 function Confetti() {
@@ -20,7 +29,6 @@ function Confetti() {
         duration: 2 + Math.random() * 2,
         color: colors[Math.floor(Math.random() * colors.length)],
         size: 6 + Math.random() * 8,
-        rotation: Math.random() * 360,
     }))
 
     return (
@@ -44,6 +52,73 @@ function Confetti() {
     )
 }
 
+function PhoneInputForm({ onSaved }) {
+    const [phone, setPhone] = useState('')
+    const [saving, setSaving] = useState(false)
+    const [error, setError] = useState('')
+    const [saved, setSaved] = useState(false)
+
+    async function handleSubmit(e) {
+        e.preventDefault()
+        const trimmed = phone.trim()
+        if (!/^0\d{8,9}$/.test(trimmed)) {
+            setError('Số điện thoại không hợp lệ (VD: 0901234567)')
+            return
+        }
+        setError('')
+        setSaving(true)
+        try {
+            const { error: rpcError } = await supabase.rpc('save_my_phone', { phone: trimmed })
+            if (rpcError) throw rpcError
+            setSaved(true)
+            onSaved?.(trimmed)
+        } catch (err) {
+            setError('Lỗi lưu SĐT: ' + err.message)
+        } finally {
+            setSaving(false)
+        }
+    }
+
+    if (saved) {
+        return (
+            <div className="mt-4 p-3 rounded-xl bg-emerald-900/30 border border-emerald-500/20 text-emerald-300/90 text-sm animate-fade-in-up">
+                ✅ Đã lưu SĐT <strong>{phone}</strong>. Lì xì sẽ được chuyển qua Ví VNPAY sau <strong>01/03/2026</strong>.
+            </div>
+        )
+    }
+
+    return (
+        <form onSubmit={handleSubmit} className="mt-4 animate-fade-in-up">
+            <div className="p-4 rounded-xl bg-surface/60 border border-tet-gold/20">
+                <p className="text-sm text-tet-gold-light mb-3 font-medium">
+                    📱 Nhập SĐT App VNPAY để nhận lì xì
+                </p>
+                <div className="flex gap-2">
+                    <input
+                        type="tel"
+                        value={phone}
+                        onChange={e => setPhone(e.target.value)}
+                        placeholder="0901234567"
+                        maxLength={11}
+                        className="flex-1 px-3 py-2.5 rounded-xl bg-surface border border-tet-gold/20 text-tet-pink text-sm placeholder-tet-pink/30 focus:outline-none focus:ring-2 focus:ring-tet-gold/40 transition-all"
+                    />
+                    <button
+                        type="submit"
+                        disabled={saving}
+                        className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-tet-gold to-yellow-400 text-surface font-semibold text-sm disabled:opacity-50 transition-all hover:scale-105 active:scale-95"
+                    >
+                        {saving ? '...' : 'Lưu'}
+                    </button>
+                </div>
+                {error && <p className="text-red-400 text-xs mt-2">{error}</p>}
+                <p className="text-tet-pink/40 text-xs mt-2">
+                    Lì xì sẽ chuyển qua Ví VNPAY sau 01/03/2026
+                </p>
+            </div>
+        </form>
+    )
+}
+
 export default function LuckyDrawPage() {
     const { user, employee } = useAuth()
     const [todayResult, setTodayResult] = useState(null)
@@ -52,23 +127,22 @@ export default function LuckyDrawPage() {
     const [showConfetti, setShowConfetti] = useState(false)
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState('')
+    const [phoneSaved, setPhoneSaved] = useState(false)
     const slotRef = useRef(null)
     const [slotOffset, setSlotOffset] = useState(0)
 
-    // Check if user already spun
     const checkTodayResult = useCallback(async () => {
         if (!user) return
         try {
             const { data, error: fetchError } = await supabase.rpc('get_my_today_result')
-
             const todayData = Array.isArray(data) ? data[0] : data
-
             if (fetchError) {
                 console.error('Error checking result:', fetchError)
                 return
             }
             if (todayData) {
                 setTodayResult(todayData)
+                if (todayData.phone_number) setPhoneSaved(true)
             }
         } finally {
             setLoading(false)
@@ -86,7 +160,6 @@ export default function LuckyDrawPage() {
         setShowResult(false)
 
         try {
-            // Call server-side function for atomic spin
             const { data, error: rpcError } = await supabase.rpc('spin_lucky_draw')
 
             if (rpcError) {
@@ -105,8 +178,6 @@ export default function LuckyDrawPage() {
             }
 
             const amount = data
-
-            // Calculate slot position to land on the result
             const targetIndex = PRIZE_LIST.indexOf(amount)
             const totalItems = SLOT_ITEMS.length
             const finalIndex = totalItems - PRIZE_LIST.length + targetIndex
@@ -114,15 +185,12 @@ export default function LuckyDrawPage() {
             const offset = finalIndex * itemHeight
 
             setSlotOffset(offset)
-
-            // Wait for animation
             await new Promise(resolve => setTimeout(resolve, 2800))
 
             const result = { amount, draw_date: getTodayBangkok() }
             setTodayResult(result)
             setShowResult(true)
             setShowConfetti(true)
-
             setTimeout(() => setShowConfetti(false), 4000)
         } catch (err) {
             console.error('Spin error:', err)
@@ -138,9 +206,9 @@ export default function LuckyDrawPage() {
     }
 
     function getResultMessage(amount) {
-        if (amount >= 200000) return '🎉 ĐẠI PHÁT! Chúc mừng bạn!'
-        if (amount >= 100000) return '🎊 Tuyệt vời! Một lì xì hên!'
-        if (amount >= 50000) return '🎁 Năm mới phát tài!'
+        const tier = PRIZE_TIERS.find(t => t.amount === amount)
+        if (tier) return `${tier.emoji} ${tier.label}! Chúc mừng bạn!`
+        if (amount >= 100000) return '🎊 Tuyệt vời! Chúc mừng bạn!'
         return '🎋 Chúc mừng năm mới!'
     }
 
@@ -182,7 +250,7 @@ export default function LuckyDrawPage() {
                     </h3>
                     <p className="text-tet-pink/80 text-sm mb-4">Tết Bính Ngọ 2026</p>
 
-                    {/* Slot Machine - only visible during spin */}
+                    {/* Slot Machine */}
                     {spinning ? (
                         <div className="slot-container mb-5 mx-auto max-w-xs">
                             <div
@@ -223,15 +291,21 @@ export default function LuckyDrawPage() {
                     {todayResult && !spinning && (
                         <div className={`mb-4 ${showResult ? 'animate-bounce-in' : 'animate-fade-in-up'}`}>
                             <p className="text-tet-pink/80 text-sm mb-2">
-                                {showResult ? getResultMessage(todayResult.amount) : '✅ Bạn đã quay thành công:'}
+                                {getResultMessage(todayResult.amount)}
                             </p>
                             <div className="text-4xl font-bold text-tet-gold font-[var(--font-display)] animate-pulse-glow inline-block px-6 py-3 rounded-2xl bg-surface/50">
                                 {formatCurrency(todayResult.amount)}
                             </div>
-                            <div className="mt-4 p-3 rounded-xl bg-emerald-900/30 border border-emerald-500/20 text-emerald-300/90 text-sm leading-relaxed">
-                                ✅ Kết quả đã được ghi nhận.<br />
-                                Đại diện phòng sẽ chuyển lì xì qua <strong>Ví VNPAY</strong> sau <strong>01/03/2026</strong>.
-                            </div>
+
+                            {/* Phone input or saved confirmation */}
+                            {!phoneSaved ? (
+                                <PhoneInputForm onSaved={(p) => setPhoneSaved(true)} />
+                            ) : (
+                                <div className="mt-4 p-3 rounded-xl bg-emerald-900/30 border border-emerald-500/20 text-emerald-300/90 text-sm leading-relaxed">
+                                    ✅ Kết quả đã được ghi nhận{todayResult.phone_number ? ` • SĐT: ${todayResult.phone_number}` : ''}.<br />
+                                    Đại diện phòng sẽ chuyển lì xì qua <strong>Ví VNPAY</strong> sau <strong>01/03/2026</strong>.
+                                </div>
+                            )}
                         </div>
                     )}
 
@@ -261,18 +335,45 @@ export default function LuckyDrawPage() {
                 </div>
             </div>
 
-            {/* Prize table */}
+            {/* Creative Prize Tiers Display */}
             <div className="glass-card p-5 animate-fade-in-up" style={{ animationDelay: '0.3s' }}>
-                <h4 className="text-sm font-semibold text-tet-gold mb-3 flex items-center gap-2">
-                    <span>📊</span> Cơ cấu giải thưởng
+                <h4 className="text-center text-sm font-semibold text-tet-gold mb-4">
+                    🏆 Các mức giải thưởng
                 </h4>
-                <div className="space-y-2">
-                    {PRIZES.map(p => (
-                        <div key={p.amount} className="flex items-center justify-center px-3 py-2 rounded-lg bg-surface/50 border border-tet-gold/10">
-                            <span className="text-tet-gold-light font-semibold text-sm">{formatCurrency(p.amount)}</span>
+                <div className="space-y-3">
+                    {PRIZE_TIERS.map((tier, i) => (
+                        <div
+                            key={tier.amount}
+                            className={`relative overflow-hidden rounded-2xl p-[1px] bg-gradient-to-r ${tier.color} shadow-lg ${tier.glow} transition-all duration-300 hover:scale-[1.02]`}
+                            style={{ animationDelay: `${0.4 + i * 0.1}s` }}
+                        >
+                            <div className={`bg-surface/90 backdrop-blur-sm rounded-2xl px-4 py-3 flex items-center gap-3 ${tier.ring}`}>
+                                <span className={`${i === 0 ? 'text-3xl' : i === 1 ? 'text-2xl' : 'text-xl'} flex-shrink-0`}>
+                                    {tier.emoji}
+                                </span>
+                                <div className="flex-1 min-w-0">
+                                    <div className={`font-bold ${tier.textSize} bg-gradient-to-r ${tier.color} bg-clip-text text-transparent`}>
+                                        {formatCurrency(tier.amount)}
+                                    </div>
+                                    <div className="text-xs text-tet-pink/50 mt-0.5">{tier.label}</div>
+                                </div>
+                                {i === 0 && (
+                                    <div className="text-xs px-2 py-0.5 rounded-full bg-amber-400/20 text-amber-300 font-medium animate-pulse">
+                                        TOP
+                                    </div>
+                                )}
+                                {i === 1 && (
+                                    <div className="text-xs px-2 py-0.5 rounded-full bg-blue-400/20 text-blue-300 font-medium">
+                                        HOT
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     ))}
                 </div>
+                <p className="text-center text-xs text-tet-pink/30 mt-4">
+                    Mỗi người chỉ quay 1 lần • Hên xui thôi nha! 🎲
+                </p>
             </div>
         </div>
     )

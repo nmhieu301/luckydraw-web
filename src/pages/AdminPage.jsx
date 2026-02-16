@@ -442,6 +442,7 @@ export default function AdminPage() {
                         count: s.spin_count,
                         total: s.total_amount,
                         lastDate: s.last_spin_date,
+                        phone: s.phone_number || '',
                     }
                 })
             }
@@ -451,6 +452,7 @@ export default function AdminPage() {
                 spin_count: statsByEmail[emp.email]?.count || 0,
                 last_spin_date: statsByEmail[emp.email]?.lastDate || null,
                 total_amount: statsByEmail[emp.email]?.total || 0,
+                phone_number: statsByEmail[emp.email]?.phone || '',
             }))
 
             setEmployees(enriched)
@@ -468,6 +470,7 @@ export default function AdminPage() {
                 target_email: emp.email,
                 target_date: today,
             })
+
 
             if (error) { showMsg(`❌ Lỗi: ${error.message}`, 'error'); return }
 
@@ -516,13 +519,14 @@ export default function AdminPage() {
     }
 
     function exportCSV() {
-        const headers = ['Email', 'Họ tên', 'Phòng ban', 'Mã NV', 'Vai trò', 'Số lần quay', 'Tổng nhận', 'Quay gần nhất', 'Đăng nhập gần nhất']
+        const headers = ['Email', 'Họ tên', 'Phòng ban', 'Mã NV', 'Vai trò', 'SĐT VNPAY', 'Số lần quay', 'Tổng nhận', 'Quay gần nhất', 'Đăng nhập gần nhất']
         const rows = employees.map(emp => [
             emp.email,
             emp.full_name,
             emp.department || '',
             emp.employee_code || '',
             emp.role,
+            emp.phone_number || '',
             emp.spin_count || 0,
             emp.total_amount || 0,
             emp.last_spin_date ? formatDateVN(emp.last_spin_date) : '',
@@ -534,7 +538,7 @@ export default function AdminPage() {
         const url = URL.createObjectURL(blob)
         const link = document.createElement('a')
         link.href = url
-        link.download = `nhan-vien-lucky-draw-${getTodayBangkok()}.csv`
+        link.download = `lucky-draw-${getTodayBangkok()}.csv`
         link.click()
         URL.revokeObjectURL(url)
     }
