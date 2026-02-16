@@ -212,6 +212,13 @@ function HistoryModal({ emp, onClose }) {
 }
 
 function StatsPanel({ employees }) {
+    const [prizePool, setPrizePool] = useState([])
+
+    useEffect(() => {
+        supabase.from('prize_pool').select('*').order('amount', { ascending: false })
+            .then(({ data }) => setPrizePool(data || []))
+    }, [])
+
     const totalEmployees = employees.length
     const totalSpins = employees.reduce((sum, e) => sum + (e.spin_count || 0), 0)
     const totalAmount = employees.reduce((sum, e) => sum + (e.total_amount || 0), 0)
@@ -219,24 +226,68 @@ function StatsPanel({ employees }) {
     const today = getTodayBangkok()
     const spunToday = employees.filter(e => e.last_spin_date === today).length
 
+    const totalPrizes = prizePool.reduce((s, p) => s + p.total_qty, 0)
+    const totalRemaining = prizePool.reduce((s, p) => s + p.remaining_qty, 0)
+    const totalWon = totalPrizes - totalRemaining
+
     return (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
-            <div className="glass-card p-3 text-center">
-                <div className="text-lg font-bold text-tet-gold font-[var(--font-display)]">{totalEmployees}</div>
-                <div className="text-xs text-tet-pink/50">Nhân viên</div>
+        <div className="mb-4 space-y-3">
+            {/* Employee stats */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                <div className="glass-card p-3 text-center">
+                    <div className="text-lg font-bold text-tet-gold font-[var(--font-display)]">{totalEmployees}</div>
+                    <div className="text-xs text-tet-pink/50">Nhân viên</div>
+                </div>
+                <div className="glass-card p-3 text-center">
+                    <div className="text-lg font-bold text-tet-gold font-[var(--font-display)]">{totalSpins}</div>
+                    <div className="text-xs text-tet-pink/50">Tổng lượt quay</div>
+                </div>
+                <div className="glass-card p-3 text-center">
+                    <div className="text-lg font-bold text-tet-gold font-[var(--font-display)]">{formatCurrency(totalAmount)}</div>
+                    <div className="text-xs text-tet-pink/50">Tổng đã phát</div>
+                </div>
+                <div className="glass-card p-3 text-center">
+                    <div className="text-lg font-bold text-tet-gold font-[var(--font-display)]">{spunToday}/{loggedIn}</div>
+                    <div className="text-xs text-tet-pink/50">Quay hôm nay</div>
+                </div>
             </div>
-            <div className="glass-card p-3 text-center">
-                <div className="text-lg font-bold text-tet-gold font-[var(--font-display)]">{totalSpins}</div>
-                <div className="text-xs text-tet-pink/50">Tổng lượt quay</div>
-            </div>
-            <div className="glass-card p-3 text-center">
-                <div className="text-lg font-bold text-tet-gold font-[var(--font-display)]">{formatCurrency(totalAmount)}</div>
-                <div className="text-xs text-tet-pink/50">Tổng đã phát</div>
-            </div>
-            <div className="glass-card p-3 text-center">
-                <div className="text-lg font-bold text-tet-gold font-[var(--font-display)]">{spunToday}/{loggedIn}</div>
-                <div className="text-xs text-tet-pink/50">Quay hôm nay</div>
-            </div>
+
+            {/* Prize pool stats */}
+            {prizePool.length > 0 && (
+                <div className="glass-card p-4">
+                    <div className="flex items-center justify-between mb-3">
+                        <h4 className="text-sm font-semibold text-tet-gold flex items-center gap-2">
+                            🏆 Thống kê giải thưởng
+                        </h4>
+                        <span className="text-xs text-tet-pink/50">
+                            Đã trúng: <strong className="text-tet-gold">{totalWon}</strong>/{totalPrizes}
+                        </span>
+                    </div>
+                    <div className="space-y-2">
+                        {prizePool.map(p => {
+                            const won = p.total_qty - p.remaining_qty
+                            const pct = p.total_qty > 0 ? (won / p.total_qty) * 100 : 0
+                            return (
+                                <div key={p.id} className="flex items-center gap-3">
+                                    <span className="text-sm font-semibold text-tet-gold-light w-24 text-right flex-shrink-0">
+                                        {formatCurrency(p.amount)}
+                                    </span>
+                                    <div className="flex-1 h-5 bg-surface/80 rounded-full overflow-hidden border border-tet-gold/10">
+                                        <div
+                                            className="h-full bg-gradient-to-r from-tet-gold to-yellow-400 rounded-full transition-all duration-500"
+                                            style={{ width: `${pct}%` }}
+                                        />
+                                    </div>
+                                    <span className="text-xs text-tet-pink/60 w-16 text-right flex-shrink-0">
+                                        <strong className={won > 0 ? 'text-yellow-400' : 'text-tet-pink/40'}>{won}</strong>
+                                        <span className="text-tet-pink/30">/{p.total_qty}</span>
+                                    </span>
+                                </div>
+                            )
+                        })}
+                    </div>
+                </div>
+            )}
         </div>
     )
 }
