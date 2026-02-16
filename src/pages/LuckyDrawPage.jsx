@@ -8,7 +8,7 @@ const SLOT_LABELS = ['Lì Xì', 'May Mắn', 'Phát Tài', 'An Khang', 'Hạnh P
 const SLOT_ITEMS = [
     ...SLOT_LABELS,
     ...SLOT_LABELS,
-    20000, 50000, 100000, 200000, 500000,
+    22222, 68686, 86868, 123456, 456789,
 ]
 
 function Confetti() {
@@ -263,17 +263,13 @@ export default function LuckyDrawPage() {
 
             {/* Prize table */}
             <div className="glass-card p-5 animate-fade-in-up" style={{ animationDelay: '0.3s' }}>
-                <h4 className="text-sm font-semibold text-tet-gold mb-1 flex items-center gap-2">
+                <h4 className="text-sm font-semibold text-tet-gold mb-3 flex items-center gap-2">
                     <span>📊</span> Cơ cấu giải thưởng
                 </h4>
-                <p className="text-xs text-tet-pink/40 mb-3">
-                    Tổng ngân sách: <strong className="text-tet-gold/70">3.000.000đ</strong> • 74 giải
-                </p>
                 <div className="space-y-2">
                     {PRIZES.map(p => (
-                        <div key={p.amount} className="flex items-center justify-between px-3 py-2 rounded-lg bg-surface/50 border border-tet-gold/10">
+                        <div key={p.amount} className="flex items-center justify-center px-3 py-2 rounded-lg bg-surface/50 border border-tet-gold/10">
                             <span className="text-tet-gold-light font-semibold text-sm">{formatCurrency(p.amount)}</span>
-                            <span className="text-tet-pink/50 text-xs">{p.qty} giải</span>
                         </div>
                     ))}
                 </div>

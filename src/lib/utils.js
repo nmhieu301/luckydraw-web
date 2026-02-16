@@ -23,15 +23,14 @@ export function isValidVnpayEmail(email) {
 }
 
 /**
- * Fixed prize pool structure
- * Total: 74 prizes, 3,000,000 VND budget
+ * Fixed prize pool structure — 50 prizes total
  */
 const PRIZES = [
-    { amount: 500000, qty: 1 },
-    { amount: 200000, qty: 2 },
-    { amount: 100000, qty: 4 },
-    { amount: 50000, qty: 12 },
-    { amount: 20000, qty: 55 },
+    { amount: 456789, qty: 3 },
+    { amount: 123456, qty: 5 },
+    { amount: 86868, qty: 8 },
+    { amount: 68686, qty: 10 },
+    { amount: 22222, qty: 24 },
 ]
 
 export { PRIZES }
