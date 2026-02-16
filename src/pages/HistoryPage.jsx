@@ -17,20 +17,22 @@ export default function HistoryPage() {
     async function fetchHistory() {
         setLoading(true)
         try {
-            const thirtyDaysAgo = new Date()
-            thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
-            const fromDate = thirtyDaysAgo.toISOString().split('T')[0]
-
             const { data, error } = await supabase.rpc('get_my_history', { days_back: 30 })
 
             if (error) {
                 console.error('Error fetching history:', error)
+                setResults([])
+                setStats({ total: 0, totalAmount: 0 })
                 return
             }
 
             setResults(data || [])
             const totalAmount = (data || []).reduce((sum, r) => sum + r.amount, 0)
             setStats({ total: data?.length || 0, totalAmount })
+        } catch (err) {
+            console.error('History fetch failed:', err)
+            setResults([])
+            setStats({ total: 0, totalAmount: 0 })
         } finally {
             setLoading(false)
         }
@@ -38,8 +40,13 @@ export default function HistoryPage() {
 
     if (loading) {
         return (
-            <div className="flex items-center justify-center py-20">
-                <div className="text-tet-gold animate-pulse text-lg">Đang tải...</div>
+            <div className="max-w-lg mx-auto px-4 py-6">
+                <h2 className="text-2xl font-bold font-[var(--font-display)] text-tet-gold-light mb-6 animate-fade-in-up">
+                    📋 Lịch sử quay thưởng
+                </h2>
+                <div className="flex items-center justify-center py-12">
+                    <div className="text-tet-gold animate-pulse text-sm">Đang tải...</div>
+                </div>
             </div>
         )
     }
