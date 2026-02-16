@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext'
 import { formatCurrency, formatDateVN, formatDateTimeVN, isValidVnpayEmail, getTodayBangkok } from '../lib/utils'
 import * as XLSX from 'xlsx'
 
-function EmployeeList({ employees, loading, onReset, onResetAll, onToggleRole, onViewHistory, searchTerm, setSearchTerm }) {
+function EmployeeList({ employees, loading, onReset, onResetAll, onToggleRole, onViewHistory, onDelete, searchTerm, setSearchTerm }) {
     const filtered = employees.filter(emp =>
         emp.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (emp.full_name && emp.full_name.toLowerCase().includes(searchTerm.toLowerCase()))
@@ -72,6 +72,7 @@ function EmployeeList({ employees, loading, onReset, onResetAll, onToggleRole, o
                                     onResetAll={onResetAll}
                                     onToggleRole={onToggleRole}
                                     onViewHistory={onViewHistory}
+                                    onDelete={onDelete}
                                 />
                             </div>
                         </div>
@@ -85,7 +86,7 @@ function EmployeeList({ employees, loading, onReset, onResetAll, onToggleRole, o
     )
 }
 
-function EmployeeActions({ emp, onReset, onResetAll, onToggleRole, onViewHistory }) {
+function EmployeeActions({ emp, onReset, onResetAll, onToggleRole, onViewHistory, onDelete }) {
     const [open, setOpen] = useState(false)
     const ref = useRef(null)
 
@@ -131,6 +132,13 @@ function EmployeeActions({ emp, onReset, onResetAll, onToggleRole, onViewHistory
                         className="w-full text-left px-4 py-2.5 text-sm text-tet-gold hover:bg-surface-hover transition-colors flex items-center gap-2"
                     >
                         {emp.role === 'admin' ? '👤 Hạ quyền Staff' : '👑 Nâng quyền Admin'}
+                    </button>
+                    <div className="border-t border-tet-gold/10 my-1" />
+                    <button
+                        onClick={() => { onDelete(emp); setOpen(false) }}
+                        className="w-full text-left px-4 py-2.5 text-sm text-red-500 hover:bg-red-900/20 transition-colors flex items-center gap-2"
+                    >
+                        ❌ Xoá user
                     </button>
                 </div>
             )}
@@ -518,6 +526,22 @@ export default function AdminPage() {
         }
     }
 
+    async function handleDeleteUser(emp) {
+        if (!window.confirm(`⚠️ XOÁ HOÀN TOÀN user "${emp.full_name}" (${emp.email})?\n\nHành động này sẽ xoá:\n- Tài khoản đăng nhập\n- Thông tin nhân viên\n- Lịch sử quay thưởng\n\nUser sẽ phải đăng ký lại từ đầu.`)) return
+
+        try {
+            const { error } = await supabase.rpc('admin_delete_user', {
+                target_id: emp.id,
+            })
+
+            if (error) { showMsg(`❌ Lỗi: ${error.message}`, 'error'); return }
+
+            showMsg(`✅ Đã xoá user ${emp.full_name}`)
+            fetchEmployees()
+        } catch (err) {
+            showMsg(`❌ ${err.message}`, 'error')
+        }
+    }
     function exportCSV() {
         const headers = ['Email', 'Họ tên', 'Phòng ban', 'Mã NV', 'Vai trò', 'SĐT VNPAY', 'Số lần quay', 'Tổng nhận', 'Quay gần nhất', 'Đăng nhập gần nhất']
         const rows = employees.map(emp => [
@@ -611,6 +635,7 @@ export default function AdminPage() {
                         onResetAll={handleResetAll}
                         onToggleRole={handleToggleRole}
                         onViewHistory={setHistoryEmp}
+                        onDelete={handleDeleteUser}
                         searchTerm={searchTerm}
                         setSearchTerm={setSearchTerm}
                     />
