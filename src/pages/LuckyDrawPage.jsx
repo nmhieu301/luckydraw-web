@@ -194,7 +194,7 @@ export default function LuckyDrawPage() {
             setTimeout(() => setShowConfetti(false), 4000)
         } catch (err) {
             console.error('Spin error:', err)
-            setError('Đã xảy ra lỗi khi quay thưởng. Vui lòng thử lại sau.')
+            setError(`Đã xảy ra lỗi khi quay thưởng. Vui lòng thử lại sau.`)
         } finally {
             setSpinning(false)
         }
