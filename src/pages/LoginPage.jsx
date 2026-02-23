@@ -38,6 +38,23 @@ export default function LoginPage() {
 
         setLoading(true)
         try {
+            // Check if email is in whitelist (employees table)
+            const { data: emp, error: checkErr } = await supabase
+                .from('employees')
+                .select('id')
+                .eq('email', trimmedEmail)
+                .maybeSingle()
+
+            if (checkErr) {
+                setError('Lỗi kiểm tra danh sách. Vui lòng thử lại.')
+                return
+            }
+
+            if (!emp) {
+                setError('Email chưa có trong danh sách được phép tham gia. Vui lòng liên hệ Admin hieunm2@vnpay.vn để được thêm vào.')
+                return
+            }
+
             const { error: authError } = await supabase.auth.signInWithOtp({
                 email: trimmedEmail,
                 options: {
