@@ -8,16 +8,17 @@ const SLOT_LABELS = ['Lì Xì', 'May Mắn', 'Phát Tài', 'An Khang', 'Hạnh P
 const SLOT_ITEMS = [
     ...SLOT_LABELS,
     ...SLOT_LABELS,
-    22222, 68686, 86868, 123456, 456789,
+    26262, 45678, 66666, 88888, 123456, 999999,
 ]
 
 // Prize tier styling — big to small, with emojis, colors, and sizes
 const PRIZE_TIERS = [
-    { amount: 456789, emoji: '👑', label: 'JACKPOT', color: 'from-yellow-300 via-amber-400 to-yellow-500', glow: 'shadow-amber-400/40', textSize: 'text-2xl', ring: 'ring-2 ring-amber-400/50' },
+    { amount: 999999, emoji: '👑', label: 'JACKPOT', color: 'from-yellow-300 via-amber-400 to-yellow-500', glow: 'shadow-amber-400/40', textSize: 'text-2xl', ring: 'ring-2 ring-amber-400/50' },
     { amount: 123456, emoji: '💎', label: 'Kim Cương', color: 'from-cyan-300 via-blue-400 to-indigo-400', glow: 'shadow-blue-400/30', textSize: 'text-xl', ring: 'ring-2 ring-blue-400/40' },
-    { amount: 86868, emoji: '🔥', label: 'Phát Lộc', color: 'from-orange-300 via-red-400 to-rose-400', glow: 'shadow-red-400/25', textSize: 'text-lg', ring: 'ring-1 ring-red-400/30' },
-    { amount: 68686, emoji: '🎯', label: 'Lộc Phát', color: 'from-emerald-300 via-green-400 to-teal-400', glow: 'shadow-green-400/20', textSize: 'text-base', ring: 'ring-1 ring-green-400/30' },
-    { amount: 22222, emoji: '🍀', label: 'May Mắn', color: 'from-pink-300 via-rose-300 to-fuchsia-300', glow: 'shadow-pink-300/15', textSize: 'text-sm', ring: '' },
+    { amount: 88888, emoji: '🔥', label: 'Phát Lộc', color: 'from-orange-300 via-red-400 to-rose-400', glow: 'shadow-red-400/25', textSize: 'text-lg', ring: 'ring-1 ring-red-400/30' },
+    { amount: 66666, emoji: '🎯', label: 'Lộc Phát', color: 'from-emerald-300 via-green-400 to-teal-400', glow: 'shadow-green-400/20', textSize: 'text-base', ring: 'ring-1 ring-green-400/30' },
+    { amount: 45678, emoji: '🍀', label: 'May Mắn', color: 'from-pink-300 via-rose-300 to-fuchsia-300', glow: 'shadow-pink-300/15', textSize: 'text-sm', ring: 'ring-1 ring-pink-300/20' },
+    { amount: 26262, emoji: '🎋', label: 'An Khang', color: 'from-violet-300 via-purple-300 to-indigo-300', glow: 'shadow-purple-300/10', textSize: 'text-sm', ring: '' },
 ]
 
 function Confetti() {

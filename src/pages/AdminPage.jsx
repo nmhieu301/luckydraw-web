@@ -318,7 +318,17 @@ function ExcelImport({ onImportDone }) {
                 const errs = []
 
                 json.forEach((row, idx) => {
-                    const email = (row.email || row.Email || row.EMAIL || '').toString().trim().toLowerCase()
+                    // Support both structured (email + name) and email-only formats
+                    // Check if first column key looks like an email (email-only file)
+                    const keys = Object.keys(row)
+                    let email = ''
+                    if (keys.length === 1 && row[keys[0]].toString().includes('@')) {
+                        email = row[keys[0]].toString().trim().toLowerCase()
+                    } else if (keys[0] && !keys[0].match(/email|Email|EMAIL|họ_tên|ho_ten|full_name|phòng_ban|department|mã_nv/i) && row[keys[0]].toString().includes('@')) {
+                        email = row[keys[0]].toString().trim().toLowerCase()
+                    } else {
+                        email = (row.email || row.Email || row.EMAIL || '').toString().trim().toLowerCase()
+                    }
                     const fullName = (row['họ_tên'] || row.ho_ten || row.full_name || row['Họ tên'] || row['Ho ten'] || row.name || row.Name || '').toString().trim()
                     const department = (row['phòng_ban'] || row.phong_ban || row.department || row['Phòng ban'] || row.Department || '').toString().trim()
                     const employeeCode = (row['mã_nv'] || row.ma_nv || row.employee_code || row['Mã NV'] || '').toString().trim()
@@ -331,12 +341,11 @@ function ExcelImport({ onImportDone }) {
                         errs.push({ row: idx + 2, message: `Email không hợp lệ: ${email}` })
                         return
                     }
-                    if (!fullName) {
-                        errs.push({ row: idx + 2, message: `Thiếu họ tên cho email: ${email}` })
-                        return
-                    }
 
-                    rows.push({ email, full_name: fullName, department, employee_code: employeeCode || null })
+                    // Auto-generate full_name from email prefix if missing
+                    const derivedName = fullName || email.split('@')[0]
+
+                    rows.push({ email, full_name: derivedName, department, employee_code: employeeCode || null })
                 })
 
                 setPreview(rows)
@@ -459,12 +468,95 @@ function ExcelImport({ onImportDone }) {
     )
 }
 
+function AddEmailForm({ onAdded }) {
+    const [email, setEmail] = useState('')
+    const [adding, setAdding] = useState(false)
+    const [error, setError] = useState('')
+    const [success, setSuccess] = useState('')
+
+    async function handleAdd(e) {
+        e.preventDefault()
+        setError('')
+        setSuccess('')
+
+        const trimmed = email.trim().toLowerCase()
+        if (!isValidVnpayEmail(trimmed)) {
+            setError('Chỉ chấp nhận email @vnpay.vn')
+            return
+        }
+
+        setAdding(true)
+        try {
+            const derivedName = trimmed.split('@')[0]
+            const { error: dbError } = await supabase
+                .from('employees')
+                .upsert(
+                    [{ email: trimmed, full_name: derivedName, role: 'staff' }],
+                    { onConflict: 'email', ignoreDuplicates: true }
+                )
+
+            if (dbError) {
+                setError('Lỗi: ' + dbError.message)
+                return
+            }
+
+            setSuccess(`✅ Đã thêm ${trimmed}`)
+            setEmail('')
+            onAdded?.()
+        } catch (err) {
+            setError('Lỗi: ' + err.message)
+        } finally {
+            setAdding(false)
+        }
+    }
+
+    return (
+        <div>
+            <p className="text-sm text-tet-gold-light/80 mb-4">
+                Thêm email mới vào danh sách được phép quay số.
+            </p>
+            <form onSubmit={handleAdd} className="space-y-3">
+                <div>
+                    <label className="block text-sm font-medium text-tet-gold-light/80 mb-2">
+                        📧 Email nhân viên
+                    </label>
+                    <input
+                        type="email"
+                        value={email}
+                        onChange={e => setEmail(e.target.value)}
+                        placeholder="ten@vnpay.vn"
+                        className="w-full px-4 py-3 rounded-xl bg-surface border border-tet-gold/20 text-tet-red-light placeholder-tet-red-light/30 focus:outline-none focus:border-tet-gold/60 focus:ring-2 focus:ring-tet-gold/20 transition-all"
+                        required
+                    />
+                </div>
+                {error && (
+                    <div className="p-3 rounded-xl bg-red-900/30 border border-red-500/30 text-red-300 text-sm">
+                        ⚠️ {error}
+                    </div>
+                )}
+                {success && (
+                    <div className="p-3 rounded-xl bg-green-900/30 border border-green-500/30 text-green-300 text-sm">
+                        {success}
+                    </div>
+                )}
+                <button
+                    type="submit"
+                    disabled={adding}
+                    className="w-full py-3 px-4 rounded-xl font-semibold text-surface bg-gradient-to-r from-tet-gold to-yellow-400 hover:from-yellow-400 hover:to-tet-gold disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-tet-gold/20"
+                >
+                    {adding ? 'Đang thêm...' : '➕ Thêm Email'}
+                </button>
+            </form>
+        </div>
+    )
+}
+
 export default function AdminPage() {
     const { user } = useAuth()
     const [employees, setEmployees] = useState([])
     const [loading, setLoading] = useState(true)
     const [searchTerm, setSearchTerm] = useState('')
-    const [activeTab, setActiveTab] = useState('list') // 'list' | 'import'
+    const [activeTab, setActiveTab] = useState('list') // 'list' | 'import' | 'add'
     const [msg, setMsg] = useState({ text: '', type: '' })
     const [historyEmp, setHistoryEmp] = useState(null)
 
@@ -659,6 +751,15 @@ export default function AdminPage() {
                     📋 Danh sách ({employees.length})
                 </button>
                 <button
+                    onClick={() => setActiveTab('add')}
+                    className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-medium transition-all ${activeTab === 'add'
+                        ? 'bg-tet-gold/20 text-tet-gold border border-tet-gold/30'
+                        : 'bg-surface/50 text-tet-pink/60 border border-transparent hover:bg-surface-hover'
+                        }`}
+                >
+                    ➕ Thêm Email
+                </button>
+                <button
                     onClick={() => setActiveTab('import')}
                     className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-medium transition-all ${activeTab === 'import'
                         ? 'bg-tet-gold/20 text-tet-gold border border-tet-gold/30'
@@ -690,6 +791,8 @@ export default function AdminPage() {
                         searchTerm={searchTerm}
                         setSearchTerm={setSearchTerm}
                     />
+                ) : activeTab === 'add' ? (
+                    <AddEmailForm onAdded={fetchEmployees} />
                 ) : (
                     <ExcelImport onImportDone={fetchEmployees} />
                 )}

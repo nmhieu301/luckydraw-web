@@ -9,6 +9,7 @@
 ## 📋 Tính năng
 
 ### 👤 Nhân viên
+
 | Tính năng | Mô tả |
 |-----------|--------|
 | 🔐 Đăng nhập OTP | Email `@vnpay.vn` → nhận OTP 6 số → xác thực (hết hạn sau 5 phút) |
@@ -18,6 +19,7 @@
 | 📋 Lịch sử | Xem lịch sử quay 30 ngày gần nhất + thống kê tổng nhận |
 
 ### 👑 Admin
+
 | Tính năng | Mô tả |
 |-----------|--------|
 | 👥 Quản lý nhân viên | Xem danh sách, tìm kiếm, xem trạng thái login/quay |
@@ -32,16 +34,17 @@
 
 ## 🏆 Cơ cấu giải thưởng
 
-Prize pool **cố định 50 phần quà**, rút random không hoàn lại:
+Prize pool **cố định 200 phần quà**, rút random không hoàn lại:
 
 | Giải | Số lượng | Tổng giá trị |
 |------|----------|-------------|
-| 👑 **JACKPOT** — 456.789đ | 3 phần | 1.370.367đ |
-| 💎 **Kim Cương** — 123.456đ | 5 phần | 617.280đ |
-| 🔥 **Phát Lộc** — 86.868đ | 8 phần | 694.944đ |
-| 🎯 **Lộc Phát** — 68.686đ | 10 phần | 686.860đ |
-| 🍀 **May Mắn** — 22.222đ | 24 phần | 533.328đ |
-| **Tổng** | **50 phần** | **~3.9 triệu đồng** |
+| 👑 **JACKPOT** — 999.999đ | 4 phần | 3.999.996đ |
+| 💎 **Kim Cương** — 123.456đ | 50 phần | 6.172.800đ |
+| 🔥 **Phát Lộc** — 88.888đ | 50 phần | 4.444.400đ |
+| 🎯 **Lộc Phát** — 66.666đ | 50 phần | 3.333.300đ |
+| 🍀 **May Mắn** — 45.678đ | 30 phần | 1.370.340đ |
+| 🎋 **An Khang** — 26.262đ | 16 phần | 420.192đ |
+| **Tổng** | **200 phần** | **~19.7 triệu đồng** |
 
 > Hết prize pool → Admin cần liên hệ reset hoặc bổ sung thêm.
 
@@ -50,6 +53,7 @@ Prize pool **cố định 50 phần quà**, rút random không hoàn lại:
 ## 🚀 Chạy Local
 
 ### Yêu cầu
+
 - Node.js 18+
 - Tài khoản Supabase (đã tạo project)
 
@@ -67,7 +71,7 @@ cp .env.example .env
 npm run dev
 ```
 
-Mở trình duyệt tại **http://localhost:5173**
+Mở trình duyệt tại **<http://localhost:5173>**
 
 ### Biến môi trường (`.env`)
 
@@ -129,20 +133,25 @@ VALUES ('admin@vnpay.vn', 'Admin User', 'IT', 'admin');
 ## 🏗 Database Schema
 
 ### `employees`
+
 - `id` (uuid PK), `auth_user_id` (FK → auth.users), `email` (unique), `full_name`, `department`, `employee_code`, `role` (admin/staff), `last_login_at`, `created_at`
 
 ### `lucky_draw_results`
+
 - `id` (bigint PK), `user_id` (FK), `email`, `amount`, `phone_number`, `draw_date` (unique per user), `created_at`
 
 ### `prize_pool`
+
 - `id` (bigint PK), `amount`, `total_qty`, `remaining_qty`
 
 ### `audit_logs`
+
 - `id` (bigint PK), `actor_user_id`, `action`, `payload_json`, `created_at`
 
 **RLS**: Tất cả bảng đều bật Row Level Security. Staff chỉ đọc/ghi data của mình, Admin có full access qua các hàm `SECURITY DEFINER`.
 
 ### Stored Functions (RPC)
+
 | Function | Mô tả |
 |----------|--------|
 | `spin_lucky_draw()` | Thực hiện quay, rút từ prize pool, lưu kết quả |
