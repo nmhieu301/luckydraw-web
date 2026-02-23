@@ -19,6 +19,27 @@ export function AuthProvider({ children }) {
         // Safety timeout
         const safetyTimer = setTimeout(() => setLoading(false), 6000)
 
+        // Handle PKCE code exchange from magic link redirect
+        const url = new URL(window.location.href)
+        const code = url.searchParams.get('code')
+        if (code) {
+            supabase.auth.exchangeCodeForSession(code).then(({ error }) => {
+                if (error) console.error('Code exchange failed:', error)
+                // Clean up URL
+                url.searchParams.delete('code')
+                window.history.replaceState({}, '', url.pathname + url.search)
+            })
+        }
+
+        // Also handle hash-based tokens (implicit flow fallback)
+        if (window.location.hash && window.location.hash.includes('access_token')) {
+            // Supabase client auto-detects hash tokens via onAuthStateChange
+            // Just clean the hash after a short delay
+            setTimeout(() => {
+                window.history.replaceState({}, '', window.location.pathname)
+            }, 1000)
+        }
+
         // Listen for ALL auth changes including INITIAL_SESSION
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
             async (event, newSession) => {
