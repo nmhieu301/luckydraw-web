@@ -13,7 +13,7 @@ function LoadingScreen() {
       <div className="text-center animate-fade-in-up">
         <img src="/vnpay-logo.svg" alt="System" className="w-20 h-20 mx-auto mb-4 animate-float" />
         <h1 className="text-2xl font-bold text-tet-gold font-[var(--font-display)]">
-          System Lucky Draw
+          TTHT & ANTT Lucky Draw
         </h1>
         <p className="text-tet-pink/50 mt-2 animate-pulse">Đang tải...</p>
       </div>

@@ -51,7 +51,7 @@ export default function AppLayout() {
                     <div className="flex items-center gap-2">
                         <img src="/vnpay-logo.svg" alt="System" className="w-9 h-9" />
                         <div>
-                            <h1 className="text-sm font-bold text-tet-gold font-[var(--font-display)]">System Lucky Draw</h1>
+                            <h1 className="text-sm font-bold text-tet-gold font-[var(--font-display)]">TTHT & ANTT Lucky Draw</h1>
                             <p className="text-xs text-tet-pink/40">Tết 2026</p>
                         </div>
                     </div>
