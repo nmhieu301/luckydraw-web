@@ -1,4 +1,5 @@
 import { lazy, Suspense } from 'react'
+import { Analytics } from '@vercel/analytics/react'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import FireworkEffect from './components/FireworkEffect'
 import './index.css'
@@ -40,6 +41,7 @@ export default function App() {
     <AuthProvider>
       <FireworkEffect />
       <AppContent />
+      <Analytics />
     </AuthProvider>
   )
 }
