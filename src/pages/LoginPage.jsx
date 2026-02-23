@@ -38,19 +38,16 @@ export default function LoginPage() {
 
         setLoading(true)
         try {
-            // Check if email is in whitelist (employees table)
-            const { data: emp, error: checkErr } = await supabase
-                .from('employees')
-                .select('id')
-                .eq('email', trimmedEmail)
-                .maybeSingle()
+            // Check if email is in whitelist via RPC (bypasses RLS)
+            const { data: exists, error: checkErr } = await supabase
+                .rpc('check_email_whitelist', { check_email: trimmedEmail })
 
             if (checkErr) {
                 setError('Lỗi kiểm tra danh sách. Vui lòng thử lại.')
                 return
             }
 
-            if (!emp) {
+            if (!exists) {
                 setError('Email chưa có trong danh sách được phép tham gia. Vui lòng liên hệ hieunm2@vnpay.vn để được thêm vào.')
                 return
             }
