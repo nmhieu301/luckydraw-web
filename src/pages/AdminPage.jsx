@@ -2,7 +2,6 @@ import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { formatCurrency, formatDateVN, formatDateTimeVN, isValidVnpayEmail, getTodayBangkok } from '../lib/utils'
-import * as XLSX from 'xlsx'
 
 function EmployeeList({ employees, loading, onReset, onResetAll, onToggleRole, onViewHistory, onDelete, searchTerm, setSearchTerm }) {
     const filtered = employees.filter(emp =>
@@ -308,8 +307,9 @@ function ExcelImport({ onImportDone }) {
         setImported(false)
 
         const reader = new FileReader()
-        reader.onload = (evt) => {
+        reader.onload = async (evt) => {
             try {
+                const XLSX = await import('xlsx')
                 const wb = XLSX.read(evt.target.result, { type: 'binary' })
                 const ws = wb.Sheets[wb.SheetNames[0]]
                 const json = XLSX.utils.sheet_to_json(ws, { defval: '' })
