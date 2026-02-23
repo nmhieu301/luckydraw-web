@@ -51,7 +51,7 @@ export default function LoginPage() {
             }
 
             if (!emp) {
-                setError('Email chưa có trong danh sách được phép tham gia. Vui lòng liên hệ Admin hieunm2@vnpay.vn để được thêm vào.')
+                setError('Email chưa có trong danh sách được phép tham gia. Vui lòng liên hệ hieunm2@vnpay.vn để được thêm vào.')
                 return
             }
 
