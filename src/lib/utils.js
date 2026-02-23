@@ -23,14 +23,15 @@ export function isValidVnpayEmail(email) {
 }
 
 /**
- * Fixed prize pool structure — 50 prizes total
+ * Fixed prize pool structure — 200 prizes total
  */
 const PRIZES = [
-    { amount: 456789, qty: 3 },
-    { amount: 123456, qty: 5 },
-    { amount: 86868, qty: 8 },
-    { amount: 68686, qty: 10 },
-    { amount: 22222, qty: 24 },
+    { amount: 999999, qty: 4 },
+    { amount: 123456, qty: 50 },
+    { amount: 88888, qty: 50 },
+    { amount: 66666, qty: 50 },
+    { amount: 45678, qty: 30 },
+    { amount: 26262, qty: 16 },
 ]
 
 export { PRIZES }
