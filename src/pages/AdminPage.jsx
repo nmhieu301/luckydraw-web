@@ -604,7 +604,12 @@ export default function AdminPage() {
                 last_spin_date: statsByEmail[emp.email]?.lastDate || null,
                 total_amount: statsByEmail[emp.email]?.total || 0,
                 phone_number: statsByEmail[emp.email]?.phone || '',
-            }))
+            })).sort((a, b) => {
+                if (!a.last_spin_date && !b.last_spin_date) return 0
+                if (!a.last_spin_date) return 1
+                if (!b.last_spin_date) return -1
+                return b.last_spin_date.localeCompare(a.last_spin_date)
+            })
 
             setEmployees(enriched)
         } finally {
