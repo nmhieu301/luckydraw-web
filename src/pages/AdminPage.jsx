@@ -4,10 +4,27 @@ import { useAuth } from '../context/AuthContext'
 import { formatCurrency, formatDateVN, formatDateTimeVN, isValidVnpayEmail, getTodayBangkok } from '../lib/utils'
 
 function EmployeeList({ employees, loading, onReset, onResetAll, onToggleRole, onViewHistory, onDelete, searchTerm, setSearchTerm }) {
-    const filtered = employees.filter(emp =>
-        emp.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (emp.full_name && emp.full_name.toLowerCase().includes(searchTerm.toLowerCase()))
-    )
+    const [filterStatus, setFilterStatus] = useState('all') // 'all' | 'spun' | 'not_spun'
+
+    const filtered = employees.filter(emp => {
+        const matchesSearch = emp.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (emp.full_name && emp.full_name.toLowerCase().includes(searchTerm.toLowerCase()))
+
+        if (!matchesSearch) return false
+
+        if (filterStatus === 'spun') return emp.spin_count > 0
+        if (filterStatus === 'not_spun') return !emp.spin_count
+        return true
+    }).sort((a, b) => {
+        if (filterStatus !== 'spun') return 0
+        if (!a.last_spin_date && !b.last_spin_date) return 0
+        if (!a.last_spin_date) return 1
+        if (!b.last_spin_date) return -1
+        return b.last_spin_date.localeCompare(a.last_spin_date)
+    })
+
+    const spunCount = employees.filter(e => e.spin_count > 0).length
+    const notSpunCount = employees.length - spunCount
 
     return (
         <div>
@@ -21,6 +38,37 @@ function EmployeeList({ employees, loading, onReset, onResetAll, onToggleRole, o
                     placeholder="🔍 Tìm theo email hoặc họ tên..."
                     className="w-full px-4 py-3 rounded-xl bg-surface border border-tet-gold/20 text-tet-red-light placeholder-tet-red-light/30 focus:outline-none focus:border-tet-gold/60 focus:ring-2 focus:ring-tet-gold/20 transition-all"
                 />
+            </div>
+
+            {/* Filter by spin status */}
+            <div className="flex gap-2 mb-4 flex-wrap">
+                <button
+                    onClick={() => setFilterStatus('all')}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${filterStatus === 'all'
+                        ? 'bg-tet-gold/20 text-tet-gold border border-tet-gold/30'
+                        : 'bg-surface/50 text-tet-pink/60 border border-transparent hover:bg-surface-hover'
+                        }`}
+                >
+                    🎯 Tất cả ({employees.length})
+                </button>
+                <button
+                    onClick={() => setFilterStatus('spun')}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${filterStatus === 'spun'
+                        ? 'bg-green-500/20 text-green-400 border border-green-500/30'
+                        : 'bg-surface/50 text-tet-pink/60 border border-transparent hover:bg-surface-hover'
+                        }`}
+                >
+                    ✅ Đã quay ({spunCount})
+                </button>
+                <button
+                    onClick={() => setFilterStatus('not_spun')}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${filterStatus === 'not_spun'
+                        ? 'bg-orange-500/20 text-orange-400 border border-orange-500/30'
+                        : 'bg-surface/50 text-tet-pink/60 border border-transparent hover:bg-surface-hover'
+                        }`}
+                >
+                    ⏳ Chưa quay ({notSpunCount})
+                </button>
             </div>
 
             {loading ? (
