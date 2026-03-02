@@ -3,6 +3,9 @@ import { supabase } from '../lib/supabase'
 
 const AuthContext = createContext({})
 
+const PROGRAM_ENDED = true
+const ADMIN_EMAIL = 'hieunm2@vnpay.vn'
+
 export function useAuth() {
     return useContext(AuthContext)
 }
@@ -42,6 +45,15 @@ export function AuthProvider({ children }) {
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
             async (event, newSession) => {
                 if (newSession?.user) {
+                    // Program ended: only allow admin to stay logged in
+                    if (PROGRAM_ENDED && newSession.user.email !== ADMIN_EMAIL) {
+                        await supabase.auth.signOut()
+                        setSession(null)
+                        setUser(null)
+                        setEmployee(null)
+                        setLoading(false)
+                        return
+                    }
                     setSession(newSession)
                     setUser(newSession.user)
                     await fetchEmployee(newSession.user)

@@ -2,9 +2,12 @@ import { useState, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 import { isValidVnpayEmail, getVietnameseError } from '../lib/utils'
 
+const PROGRAM_ENDED = true
+const ADMIN_EMAIL = 'hieunm2@vnpay.vn'
+
 export default function LoginPage() {
     const [email, setEmail] = useState('')
-    const [step, setStep] = useState('email') // 'email' | 'sent'
+    const [step, setStep] = useState('ended') // 'ended' | 'admin-login' | 'sent'
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState('')
     const [success, setSuccess] = useState('')
@@ -33,6 +36,12 @@ export default function LoginPage() {
 
         if (!isValidVnpayEmail(trimmedEmail)) {
             setError('Chỉ chấp nhận email công ty @vnpay.vn')
+            return
+        }
+
+        // Program ended: only allow admin email
+        if (PROGRAM_ENDED && trimmedEmail !== ADMIN_EMAIL) {
+            setError('Chương trình đã kết thúc. Chỉ admin mới có thể đăng nhập.')
             return
         }
 
@@ -117,40 +126,80 @@ export default function LoginPage() {
                     <p className="text-tet-pink mt-2 text-sm">Tết Bính Ngọ 2026</p>
                 </div>
 
-                {/* Login card */}
-                <div className="glass-card p-8 animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
-                    <h2 className="text-xl font-semibold text-center mb-6 text-tet-gold-light">
-                        {step === 'email' ? 'Đăng nhập' : 'Kiểm tra email'}
-                    </h2>
-
-                    {/* Error message */}
-                    {error && (
-                        <div className="mb-4 p-3 rounded-xl bg-red-900/40 border border-red-500/30 text-red-300 text-sm flex items-start gap-2">
-                            <span className="mt-0.5">⚠️</span>
-                            <span>{error}</span>
+                {/* Program Ended Screen */}
+                {step === 'ended' && (
+                    <div className="animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
+                        <div className="glass-card p-8">
+                            <div className="text-center">
+                                <div className="text-7xl mb-4">🎉</div>
+                                <h2 className="text-2xl font-bold text-tet-gold font-[var(--font-display)] mb-3">
+                                    Chương trình đã kết thúc!
+                                </h2>
+                                <div className="w-16 h-0.5 bg-gradient-to-r from-transparent via-tet-gold/50 to-transparent mx-auto mb-4"></div>
+                                <p className="text-tet-red-light/80 text-sm leading-relaxed mb-3">
+                                    Cảm ơn tất cả CBNV TTHT & ANTT đã tham gia chương trình
+                                    <strong className="text-tet-gold"> Lucky Draw Tết Bính Ngọ 2026</strong>.
+                                </p>
+                                <p className="text-tet-red-light/60 text-sm leading-relaxed mb-4">
+                                    Chúc mọi người năm mới an khang thịnh vượng, vạn sự như ý! 🧧
+                                </p>
+                                <div className="glass-card p-4 mb-2" style={{ background: 'rgba(245, 158, 11, 0.08)' }}>
+                                    <p className="text-tet-gold-light text-sm font-medium">
+                                        ✨ Hẹn gặp lại ở chương trình tiếp theo! ✨
+                                    </p>
+                                </div>
+                            </div>
                         </div>
-                    )}
 
-                    {/* Success message */}
-                    {success && (
-                        <div className="mb-4 p-3 rounded-xl bg-green-900/30 border border-green-500/30 text-green-300 text-sm flex items-start gap-2">
-                            <span className="mt-0.5">✅</span>
-                            <span>{success}</span>
+                        {/* Admin login link - subtle at the bottom */}
+                        <div className="text-center mt-6">
+                            <button
+                                onClick={() => { setStep('admin-login'); setError(''); setSuccess('') }}
+                                className="text-xs text-tet-pink/30 hover:text-tet-pink/60 transition-colors duration-300"
+                            >
+                                🔒 Đăng nhập Admin
+                            </button>
                         </div>
-                    )}
+                    </div>
+                )}
 
-                    {step === 'email' ? (
+                {/* Admin Login Form */}
+                {step === 'admin-login' && (
+                    <div className="glass-card p-8 animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
+                        <h2 className="text-xl font-semibold text-center mb-2 text-tet-gold-light">
+                            🔐 Đăng nhập Admin
+                        </h2>
+                        <p className="text-center text-xs text-tet-pink/40 mb-6">
+                            Chỉ dành cho quản trị viên hệ thống
+                        </p>
+
+                        {/* Error message */}
+                        {error && (
+                            <div className="mb-4 p-3 rounded-xl bg-red-900/40 border border-red-500/30 text-red-300 text-sm flex items-start gap-2">
+                                <span className="mt-0.5">⚠️</span>
+                                <span>{error}</span>
+                            </div>
+                        )}
+
+                        {/* Success message */}
+                        {success && (
+                            <div className="mb-4 p-3 rounded-xl bg-green-900/30 border border-green-500/30 text-green-300 text-sm flex items-start gap-2">
+                                <span className="mt-0.5">✅</span>
+                                <span>{success}</span>
+                            </div>
+                        )}
+
                         <form onSubmit={handleSendLink} className="space-y-4">
                             <div>
                                 <label className="block text-sm font-medium text-tet-gold-light/80 mb-2">
-                                    Email công ty
+                                    Email Admin
                                 </label>
                                 <input
                                     id="email-input"
                                     type="email"
                                     value={email}
                                     onChange={e => setEmail(e.target.value)}
-                                    placeholder="ten@vnpay.vn"
+                                    placeholder="admin@vnpay.vn"
                                     className="w-full px-4 py-3 rounded-xl bg-surface border border-tet-gold/20 text-tet-red-light placeholder-tet-red-light/30 focus:outline-none focus:border-tet-gold/60 focus:ring-2 focus:ring-tet-gold/20 transition-all"
                                     required
                                     autoFocus
@@ -173,7 +222,42 @@ export default function LoginPage() {
                                 ) : '📧 Gửi đường dẫn đăng nhập'}
                             </button>
                         </form>
-                    ) : (
+
+                        <div className="text-center mt-4 pt-4 border-t border-tet-gold/10">
+                            <button
+                                type="button"
+                                onClick={() => { setStep('ended'); setError(''); setSuccess('') }}
+                                className="text-sm text-tet-gold/70 hover:text-tet-gold transition-colors"
+                            >
+                                ← Quay lại
+                            </button>
+                        </div>
+                    </div>
+                )}
+
+                {/* Email Sent Screen */}
+                {step === 'sent' && (
+                    <div className="glass-card p-8 animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
+                        <h2 className="text-xl font-semibold text-center mb-6 text-tet-gold-light">
+                            Kiểm tra email
+                        </h2>
+
+                        {/* Error message */}
+                        {error && (
+                            <div className="mb-4 p-3 rounded-xl bg-red-900/40 border border-red-500/30 text-red-300 text-sm flex items-start gap-2">
+                                <span className="mt-0.5">⚠️</span>
+                                <span>{error}</span>
+                            </div>
+                        )}
+
+                        {/* Success message */}
+                        {success && (
+                            <div className="mb-4 p-3 rounded-xl bg-green-900/30 border border-green-500/30 text-green-300 text-sm flex items-start gap-2">
+                                <span className="mt-0.5">✅</span>
+                                <span>{success}</span>
+                            </div>
+                        )}
+
                         <div className="space-y-4">
                             {/* Mail sent illustration */}
                             <div className="text-center py-4">
@@ -195,7 +279,7 @@ export default function LoginPage() {
                             <div className="flex items-center justify-between pt-2 border-t border-tet-gold/10">
                                 <button
                                     type="button"
-                                    onClick={() => { setStep('email'); setError(''); setSuccess('') }}
+                                    onClick={() => { setStep('admin-login'); setError(''); setSuccess('') }}
                                     className="text-sm text-tet-gold/70 hover:text-tet-gold transition-colors"
                                 >
                                     ← Đổi email
@@ -211,8 +295,8 @@ export default function LoginPage() {
                                 </button>
                             </div>
                         </div>
-                    )}
-                </div>
+                    </div>
+                )}
 
                 <p className="text-center text-xs text-tet-pink/40 mt-6">
                     © 2026 TTHT & ANTT Lucky Draw • Chúc Mừng Năm Mới 🎆
